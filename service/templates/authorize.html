@@ -12,9 +12,9 @@
         {% include "./branding.html" %}
       {% endwith %}
       </figure>
-      <span>Connect to Tapis</span>
+      <span>Authorize Tapis</span>
     </h1>
-    <p>The <var>{{ client_display_name }}</var> wants to use Tapis (TACC APIs) service to enable actions on behalf of <var>{{ username }}</var>.</p>
+    <p>Tapis wants to access your <var>{{ username }}</var> account.</p>
 
     {% if error %}
     <ul>
@@ -41,7 +41,7 @@
     <input type="hidden" name="user_code" value="{{ user_code }}">
     {% endif %}
     <footer id="button-container">
-      <button type="submit" name="approve" value="true" required>Connect</button>
+      <button type="submit" name="approve" value="true" required>Authorize</button>
     </footer>
   </form>
 </main>
