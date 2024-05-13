@@ -273,6 +273,27 @@ def test_password_grant_invalid_user_pass(client, init_db):
         assert response.status_code == 400
         assert "Invalid username/password combination." in response.json['message']
 
+
+def test_password_grant_invalid_uppercase_user(client, init_db):
+    # ldap clients are case insensitive, but the ldap.py bind code checks for upper case letters in the 
+    # username and rejects it if any appear. 
+    with client:
+        auth_header = {'Authorization': get_basic_auth_header(TEST_CLIENT_ID, TEST_CLIENT_KEY)}
+        payload = {
+            'grant_type': 'password',
+            'username': TEST_USERNAME.upper(),
+            'password': TEST_PASSWORD,
+        }
+        response = client.post(
+            "http://localhost:5000/v3/oauth2/tokens",
+            headers=auth_header,
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+        assert response.status_code == 400
+        assert "Invalid username/password combination." in response.json['message']
+
+
 def test_password_grant_valid(client, init_db):
     with client:
         auth_header = {'Authorization': get_basic_auth_header(TEST_CLIENT_ID, TEST_CLIENT_KEY)}

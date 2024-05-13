@@ -386,6 +386,10 @@ def check_username_password(tenant_id, username, password):
     :return: 
     """
     logger.debug(f"top of check_username_password for: {tenant_id}; {username}")
+    if not username == username.lower():
+        logger.debug(f'Mixed case username: {username}')
+        raise InvalidPasswordError("Invalid username. Only lowercase letters are allowed.")
+
     bind_dn = get_dn(tenant_id, username)
     logger.debug(f"got bind_dn: {bind_dn}")
     try:

@@ -12,7 +12,12 @@ All notable changes to this project will be documented in this file.
 - This release changes the behavior of the limit and offset paging query parameters in the Profiles API so that, 
   whenever an offset value is sent that is larger that the size of the collection, no records are returned. 
   Prior to this release, whenever an offset larger than the collection was sent, the query would "wrap" around 
-  and send results from the start of the collection. 
+  and send results from the start of the collection.
+- Since LDAP DNs are almost always case insensitive, usernames that are the same up to case are equivalent 
+  for binding. This change updates the check of a username/password combination to reject any username that 
+  contains uppercase letters. This prevents an issue where users could authenticate with different usernames 
+  that are the same up to case and retrieve JWTs with different subjects. (See issue #69).
+
   
 
 ## 1.6.0 - 2024-02-06
