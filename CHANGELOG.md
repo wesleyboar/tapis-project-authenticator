@@ -1,8 +1,21 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.6.1 - 2024-05-21 (estimated)
+### Breaking Changes:
+- None
 
-## 1.6.0 - 2024-02-06 (estimated)
+### New features:
+- None 
+
+### Bug Fixes:
+- This release changes the behavior of the limit and offset paging query parameters in the Profiles API so that, 
+  whenever an offset value is sent that is larger that the size of the collection, no records are returned. 
+  Prior to this release, whenever an offset larger than the collection was sent, the query would "wrap" around 
+  and send results from the start of the collection. 
+  
+
+## 1.6.0 - 2024-02-06
 
 ### Breaking Changes:
 - None
