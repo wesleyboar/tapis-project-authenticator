@@ -276,7 +276,7 @@ def list_tenant_users(tenant_id, limit=None, offset=0):
     # Update: 5/2024 JFS. we check if the cookie is not None before proceeding to prevent looping 
     #         around and returning additional records. A None value for cookie indicates that all 
     #         records were consumed in the first pass above. 
-    if cookie: 
+    if offset == 0 or cookie: 
         for ent in conn.entries:
             # create LdapUser objects for each entry:
             user = LdapUser.from_ldap3_entry(tenant_id, ent.entry_attributes_as_dict)
