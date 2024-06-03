@@ -1,7 +1,19 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## 1.6.1 - 2024-05-21 (estimated)
+## 1.6.2 - 2024-06-18 (estimate)
+### Breaking Changes:
+- None
+
+### New features:
+- None 
+
+### Bug Fixes:
+- This minor release updates Authenticator to the latest tapisservice Python package, 1.6.0 
+  (previously it was 1.4.0). See issue #70.
+
+
+## 1.6.1 - 2024-05-21
 ### Breaking Changes:
 - None
 
