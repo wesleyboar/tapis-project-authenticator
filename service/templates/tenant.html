@@ -5,12 +5,12 @@
    <form action="" method="post" class="s-form s-form--login">
       <h1>
          <figure>
-         {% with tenant_id=tenant_id %}
+            {% with tenant_id=tenant_id %}
             {% include "./branding.html" %}
-         {% endwith %}
-         {% with tenant_id="tacc" %}
+            {% endwith %}
+            {% with tenant_id="tacc" %}
             {% include "./branding.html" %}
-         {% endwith %}
+            {% endwith %}
          </figure>
          <span>Tapis Tenant</span>
       </h1>
@@ -23,6 +23,7 @@
 
       <div class="has-required">
          <button name="tenant" value="a2cps">A2CPS</button>
+         <button name="tenant" value="apcd">APCD</button>
          <button name="tenant" value="dev">Dev Tenant</button>
          <button name="tenant" value="icicle">ICICLE Tenant</button>
          <button name="tenant" value="cii">CII Tenant</button>
@@ -36,5 +37,5 @@
 
    </form>
 </main>
-   
+
 {% endblock %}

@@ -36,10 +36,14 @@
     <input type="hidden" name="client_state" value="{{ client_state }}">
     <input type="hidden" name="client_response_type" value="{{ client_response_type }}">
     <footer>
-      <a href="https://accounts.tacc.utexas.edu/register" rel="noreferrer" target="_blank">
-        Create Account
-      </a>
-      <button type="submit">Log In</button>
+      {% if tenant_id == 'apcd' %}
+      <a href="https://accounts.tacc.utexas.edu/apcd/register" rel="noreferrer" target="_blank">
+        {% else %}
+        <a href="https://accounts.tacc.utexas.edu/register" rel="noreferrer" target="_blank">
+          {% endif %}
+          Create Account
+        </a>
+        <button type="submit">Log In</button>
     </footer>
     <nav>
       <p>Having trouble?</p>
