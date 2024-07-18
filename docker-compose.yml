@@ -48,6 +48,7 @@ services:
             - "5000:5000"
         volumes:
             - ./config-local.json:/home/tapis/config.json
+            - ./service:/home/tapis/service
             # - ./config-local-uh.json:/home/tapis/config.json
             # - ./config-local-sdsc.json:/home/tapis/config.json
             - ./service.log:/home/tapis/service.log
