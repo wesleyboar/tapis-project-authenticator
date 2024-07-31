@@ -48,7 +48,7 @@ body {
   const loadingContent = loadingTemplate.content.cloneNode(true);
 
   form.addEventListener('submit', (event) => {
-    submitButton.setAttribute('data-status', 'busy');
+    submitButton.setAttribute('data-state', 'busy');
     submitButton.append(...loadingContent.childNodes);
   });
 </script>
