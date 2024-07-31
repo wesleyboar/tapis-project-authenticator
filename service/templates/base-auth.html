@@ -37,14 +37,12 @@ body {
 </style>
 <script type="module">
   const form = document.querySelector('form');
-  const buttons = form.querySelectorAll('button');
-  const fieldsets = form.querySelectorAll('fieldset');
+  const fields = form.querySelectorAll('input:not([hidden], select, textarea');
 
   form.addEventListener('submit', (event) => {
     /* To show user what was entered is what will be processed */
-    /* To not allow other buttons to be pressed */
-    [...fieldsets, ...buttons].forEach(element => {
-      element.setAttribute('readonly', '');
+    [...fields].forEach(field => {
+      field.setAttribute('readonly', '');
     });
   });
 </script>
