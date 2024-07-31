@@ -21,23 +21,21 @@
          </ul>
       {% endif %}
 
-      <fieldset>
-         <div>
-            <label for="user_name">Username</label>
-            <input type="text" name="user_name" value="{{ username }}" readonly disabled>
-         </div>
-         <div class="has-required">
-            <label for="mfa_token">Token</label>
-            <input id="mfa_token" type="text" name="mfa_token" placeholder="Enter MFA Token" required>
-         </div>
-      </fieldset>
-      <input type="hidden" name="client_id" value="{{ client_id }}">
-      <input type="hidden" name="client_redirect_uri" value="{{ client_redirect_uri }}">
-      <input type="hidden" name="client_display_name" value="{{ client_display_name }}">
-      <input type="hidden" name="client_state" value="{{ client_state }}">
-      <input type="hidden" name="client_response_type" value="{{ client_response_type }}">
-      <input type="hidden" name="source" value="{{ source }}">
-      <input type="hidden" name="user_code" value="{{ user_code }}">
+      <div>
+         <label for="user_name">Username</label>
+         <input type="text" name="user_name" value="{{ username }}" readonly disabled>
+      </div>
+      <div class="has-required">
+         <label for="mfa_token">Token</label>
+         <input id="mfa_token" type="text" name="mfa_token" placeholder="Enter MFA Token" required>
+         <input type="hidden" name="client_id" value="{{ client_id }}">
+         <input type="hidden" name="client_redirect_uri" value="{{ client_redirect_uri }}">
+         <input type="hidden" name="client_display_name" value="{{ client_display_name }}">
+         <input type="hidden" name="client_state" value="{{ client_state }}">
+         <input type="hidden" name="client_response_type" value="{{ client_response_type }}">
+         <input type="hidden" name="source" value="{{ source }}">
+         <input type="hidden" name="user_code" value="{{ user_code }}">
+      </div>
       <footer>
          <button type="submit">Submit</button>
       </footer>
