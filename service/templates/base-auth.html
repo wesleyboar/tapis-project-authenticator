@@ -41,8 +41,10 @@ body {
   const fieldsets = form.querySelectorAll('fieldset');
 
   form.addEventListener('submit', (event) => {
+    /* To show user what was entered is what will be processed */
+    /* To not allow other buttons to be pressed */
     [...fieldsets, ...buttons].forEach(element => {
-      element.setAttribute('disabled', '');
+      element.setAttribute('readonly', '');
     });
   });
 </script>
