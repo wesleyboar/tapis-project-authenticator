@@ -50,7 +50,6 @@ body {
   form.addEventListener('submit', (event) => {
     submitButton.setAttribute('data-status', 'busy');
     submitButton.append(...loadingContent.childNodes);
-    event.preventDefault();
   });
 </script>
 {% endblock %}
