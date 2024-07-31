@@ -22,14 +22,16 @@
     </ul>
     {% endif %}
 
-    <div class="has-required">
-      <label for="username">Username</label>
-      <input id="username" type="text" name="username" required>
-    </div>
-    <div class="has-required">
-      <label for="password">Password</label>
-      <input id="password" type="password" name="password" required>
-    </div>
+    <fieldset>
+      <div class="has-required">
+        <label for="username">Username</label>
+        <input id="username" type="text" name="username" required>
+      </div>
+      <div class="has-required">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" required>
+      </div>
+    </fieldset>
     <input type="hidden" name="client_id" value="{{ client_id }}">
     <input type="hidden" name="client_redirect_uri" value="{{ client_redirect_uri }}">
     <input type="hidden" name="client_display_name" value="{{ client_display_name }}">

@@ -3,7 +3,7 @@
 {% block assets %}
 {{ super() }}
 
-{% with core_styles_cdn_url="https://unpkg.com/@tacc/core-styles@2.17.5" %}
+{% with core_styles_cdn_url="https://cdn.jsdelivr.net/gh/TACC/core-styles@feat/s-form-fields-can-be-in-fieldsets" %}
 <style>
   /* base styles */
   @import url('{{ core_styles_cdn_url }}/dist/core-styles.settings.css') layer(base);
@@ -35,6 +35,17 @@ body {
   min-height: 100vh;
 }
 </style>
+<script type="module">
+  const form = document.querySelector('form');
+  const buttons = form.querySelectorAll('button');
+  const fieldsets = form.querySelectorAll('fieldset');
+
+  form.addEventListener('submit', (event) => {
+    [...fieldsets, ...buttons].forEach(element => {
+      element.setAttribute('disabled', '');
+    });
+  });
+</script>
 {% endblock %}
 
 {# So banner is NOT rendered #}
