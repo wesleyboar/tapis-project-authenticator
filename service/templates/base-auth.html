@@ -3,7 +3,7 @@
 {% block assets %}
 {{ super() }}
 
-{% with core_styles_cdn_url="https://cdn.jsdelivr.net/gh/TACC/Core-Styles@ba46e9a" %}
+{% with core_styles_cdn_url="https://cdn.jsdelivr.net/npm/@tacc/core-styles@v2.29.1" %}
 <style>
   /* base styles */
   @import url('{{ core_styles_cdn_url }}/dist/core-styles.settings.css') layer(base);
