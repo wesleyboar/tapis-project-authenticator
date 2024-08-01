@@ -273,10 +273,14 @@ def list_tenant_users(tenant_id, limit=None, offset=0):
         logger.error(msg)
         raise DAOError(msg)
     result = []
-    for ent in conn.entries:
-        # create LdapUser objects for each entry:
-        user = LdapUser.from_ldap3_entry(tenant_id, ent.entry_attributes_as_dict)
-        result.append(user)
+    # Update: 5/2024 JFS. we check if the cookie is not None before proceeding to prevent looping 
+    #         around and returning additional records. A None value for cookie indicates that all 
+    #         records were consumed in the first pass above. 
+    if offset == 0 or cookie: 
+        for ent in conn.entries:
+            # create LdapUser objects for each entry:
+            user = LdapUser.from_ldap3_entry(tenant_id, ent.entry_attributes_as_dict)
+            result.append(user)
     return result, offset+len(result)
 
 
@@ -382,6 +386,10 @@ def check_username_password(tenant_id, username, password):
     :return: 
     """
     logger.debug(f"top of check_username_password for: {tenant_id}; {username}")
+    if not username == username.lower():
+        logger.debug(f'Mixed case username: {username}')
+        raise InvalidPasswordError("Invalid username. Only lowercase letters are allowed.")
+
     bind_dn = get_dn(tenant_id, username)
     logger.debug(f"got bind_dn: {bind_dn}")
     try:

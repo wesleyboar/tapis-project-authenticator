@@ -14,6 +14,7 @@ from openapi_core import openapi_request_validator
 from openapi_core.contrib.flask import FlaskOpenAPIRequest
 import sqlalchemy
 import secrets
+import random
 
 from tapisservice import errors
 from tapisservice.tapisflask import utils
@@ -499,6 +500,7 @@ class LoginResource(Resource):
         logger.debug("Logging in")
         logger.debug(f"Session: {session}")
         client_id, client_redirect_uri, client_state, client, response_type = check_client()
+        logger.debug(f"client_response_type: {response_type}")
         # selecting a tenant id is required before logging in -
         tenant_id = g.request_tenant_id
         if not tenant_id:
@@ -522,7 +524,8 @@ class LoginResource(Resource):
                    'client_id': client_id,
                    'client_redirect_uri': client_redirect_uri,
                    'client_state': client_state,
-                   'tenant_id': tenant_id}
+                   'tenant_id': tenant_id,
+                   'client_response_type': response_type}
         return make_response(render_template('login.html', **context), 200, headers)
 
     def post(self):
@@ -545,7 +548,8 @@ class LoginResource(Resource):
                    'client_id': client_id,
                    'client_redirect_uri': client_redirect_uri,
                    'client_state': client_state,
-                   'tenant_id': tenant_id}
+                   'tenant_id': tenant_id,
+                   }
         username = request.form.get("username")
         if not username:
             context['error'] = 'Username is required.'
@@ -580,7 +584,10 @@ class LoginResource(Resource):
             if append_idp_to_username:
                 username = f"{username}@{idp_id}"
 
-        response_type = 'code'
+        # response_type = 'code'
+        response_type = request.form.get('client_response_type')
+        if not response_type:
+            response_type = 'code'
         session['username'] = username
         mfa_timestamp = session.get('mfa_timestamp', None)
         mfa_required = needs_mfa(tenant_id, mfa_timestamp)
@@ -619,6 +626,9 @@ class MFAResource(Resource):
         except Exception as e:
             logger.debug(f"Error getting client display name. e: {e}")
 
+        # to let us make field name unique (to prevet autofill of old tokens)
+        mfa_token_ident = str(random.random())[3:]
+
         logger.info(f"Source: {request.args.get('source', None)}")
         logger.info(f"User Code: {request.args.get('user_code', None)}")
 
@@ -628,6 +638,7 @@ class MFAResource(Resource):
                    'client_redirect_uri': client_redirect_uri,
                    'client_state': client_state,
                    'tenant_id': tenant_id,
+                   'mfa_token_name': 'mfa_token_' + mfa_token_ident,
                    'username': session.get('username'),
                    'user_code': request.args.get('user_code', None),
                    'source': request.args.get('source', None)}
@@ -645,7 +656,8 @@ class MFAResource(Resource):
             logger.debug(
                 f"did not find tenant_id in session; issuing redirect to LoginResource. session: {session}")
             return redirect(url_for('loginresource'), 200, headers)
-        mfa_token = request.form.get('mfa_token')
+        mfa_token_name = request.form.get('mfa_token_name')
+        mfa_token = request.form.get(mfa_token_name)
         source = request.form.get('source', None)
         user_code = request.form.get('user_code', None)
 
@@ -680,7 +692,8 @@ class MFAResource(Resource):
                                     source=source))
         else:
             context = {'error': response,
-                   'username': session.get('username')}
+                       'username': session.get('username'),
+                       'mfa_token_name': mfa_token_name}
             return make_response(render_template('mfa.html', **context), 200, headers)
 
 
@@ -1757,7 +1770,6 @@ class WebappTokenAndRedirect(Resource):
             has_valid_session = True
             context = {'error': None,
                        'token': token}
-            headers = {'Content-Type': 'text/html'}
             # call the userinfo endpoint
             url = f'{base_redirect_url}/v3/oauth2/userinfo'
             headers = {'X-Tapis-Token': token}
