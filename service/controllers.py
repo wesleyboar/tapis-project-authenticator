@@ -620,7 +620,7 @@ class MFAResource(Resource):
         except Exception as e:
             logger.debug(f"Error getting client display name. e: {e}")
 
-        # to let us make field name unique (to prevet autofill)
+        # to let us make field name unique (to prevet autofill of old tokens)
         mfa_token_ident = str(random.random())[3:]
 
         logger.info(f"Source: {request.args.get('source', None)}")
