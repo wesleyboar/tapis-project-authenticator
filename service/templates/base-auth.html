@@ -3,7 +3,7 @@
 {% block assets %}
 {{ super() }}
 
-{% with core_styles_cdn_url="https://unpkg.com/@tacc/core-styles@2.17.5" %}
+{% with core_styles_cdn_url="https://cdn.jsdelivr.net/npm/@tacc/core-styles@v2.29.1" %}
 <style>
   /* base styles */
   @import url('{{ core_styles_cdn_url }}/dist/core-styles.settings.css') layer(base);
@@ -20,6 +20,8 @@
   @import url('{{ core_styles_cdn_url }}/dist/trumps/s-form--portal.css') layer(project);
   @import url('{{ core_styles_cdn_url }}/dist/settings/color--portal.css') layer(project);
   @import url('{{ core_styles_cdn_url }}/dist/settings/font--portal.css') layer(project);
+  /* NOTE: authenticator uses v3 but that version does not have a spinner */
+  @import url('{{ core_styles_cdn_url }}/dist/vendors/bootstrap5--border-spinner.css') layer(project);
 </style>
 {% endwith %}
 {% endblock %}
@@ -35,6 +37,21 @@ body {
   min-height: 100vh;
 }
 </style>
+<template id="loading-content">
+  <span class="sr-only" role="status">Loading...</span>
+  <span class="spinner-border" aria-hidden="true"></span>
+</template>
+<script type="module">
+  const form = document.querySelector('form');
+  const submitButton = form.querySelector('[type="submit"]');
+  const loadingTemplate = document.getElementById('loading-content');
+  const loadingContent = loadingTemplate.content.cloneNode(true);
+
+  form.addEventListener('submit', (event) => {
+    submitButton.setAttribute('data-state', 'busy');
+    submitButton.append(...loadingContent.childNodes);
+  });
+</script>
 {% endblock %}
 
 {# So banner is NOT rendered #}
