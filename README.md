@@ -13,8 +13,12 @@ First, make sure the following passwords are set correctly.
    in develop.
 2. Within ``docker-compose.yml``, update the ``LDAP_ROOTPASS`` to match the ``password`` key in the secret ``ldap.tapis-dev`` stored in SK.
 
-#### Working With Secrets in the SK ####
-We are now storing LDAP secrets within the SK. To retrieve them, use the Python SDK with a token representing the
+#### Working With Secrets in the Tapis Security Kernel (SK) ####
+We are now storing LDAP secrets within the Tapis Security Kernel (SK). This is the official Tapis service for
+storing secrets and authorization data. For more background information on the Tapis SK, see 
+the [documentation](https://tapis.readthedocs.io/en/latest/technical/security.html).
+
+To retrieve them, use the Python SDK with a token representing the
 authenticator. For example:
 
 List all secrets:
