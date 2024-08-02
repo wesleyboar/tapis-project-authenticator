@@ -15,6 +15,13 @@
          <span>Enter MFA Token</span>
       </h1>
 
+      {% if tenant_id == "tacc" %}
+      {# {% if tenant_id == "designsafe" %} #}
+      <p>
+         Multi-Factor Authentication (MFA) is now required. <small><a href="https://docs.tacc.utexas.edu/basics/mfa/" target="_blank">Set up MFA</a> via the <span>TACC&nbsp;User&nbsp;Portal</span>. Pair via an <span>MFA application</span>, not <span>SMS (text)</span>.</small>
+      <p>
+      {% endif %}
+
       {% if error %}
          <ul>
             <li>Error: {{ error }}</li>
@@ -42,4 +49,21 @@
       </footer>
    </form>
 </main>
+{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<style>
+   /* To not let certain words break when paragraph is wrapped */
+   /* FAQ: This seemed more robust for other editors than `&nbsp;` */
+  .s-form > p :is(a, span) {
+    white-space: nowrap;
+  }
+
+   /* To allow non-bold text in form descritpion */
+  .s-form > p small {
+    font-size: inherit;
+    font-weight: var(--regular);
+  }
+</style>
 {% endblock %}
