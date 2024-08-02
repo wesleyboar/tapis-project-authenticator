@@ -37,7 +37,7 @@
     min-height: 100vh;
   }
 </style>
-<template id="loading-content">
+<<<<<<< HEAD <template id="loading-content">
   <span class="sr-only" role="status">Loading...</span>
   <span class="spinner-border" aria-hidden="true"></span>
 </template>
@@ -46,20 +46,24 @@
     const submitButton = form.querySelector('[type="submit"]');
     const loadingTemplate = document.getElementById('loading-content');
     const loadingContent = loadingTemplate.content.cloneNode(true);
-    const fields = form.querySelectorAll('input:not([hidden], select, textarea');
 
     form.addEventListener('submit', (event) => {
-      /* To show user the submission is in progress */
       submitButton.setAttribute('data-state', 'busy');
       submitButton.append(...loadingContent.childNodes);
+=======
+<script type="module">
+  const form = document.querySelector('form');
+  const fields = form.querySelectorAll('input:not([hidden], select, textarea');
 
-      /* To show user what was entered is what will be processed */
-      [...fields].forEach(field => {
-        field.setAttribute('readonly', '');
-      });
+  form.addEventListener('submit', (event) => {
+    /* To show user what was entered is what will be processed */
+    [...fields].forEach(field => {
+      field.setAttribute('readonly', '');
     });
-</script>
-{% endblock %}
+>>>>>>> 792e0a6a2310b10973900f415d34c2596ed9db17
+    });
+  </script>
+  {% endblock %}
 
   {# So banner is NOT rendered #}
   {% block banner %}
