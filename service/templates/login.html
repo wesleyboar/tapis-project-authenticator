@@ -24,11 +24,11 @@
 
     <div class="has-required">
       <label for="username">Username</label>
-      <input id="username" type="text" name="username" required>
+      <input id="username" type="text" name="username" required autocomplete="username">
     </div>
     <div class="has-required">
       <label for="password">Password</label>
-      <input id="password" type="password" name="password" required>
+      <input id="password" type="password" name="password" required autocomplete="current-password">
     </div>
     <input type="hidden" name="client_id" value="{{ client_id }}">
     <input type="hidden" name="client_redirect_uri" value="{{ client_redirect_uri }}">
