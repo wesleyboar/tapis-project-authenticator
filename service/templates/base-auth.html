@@ -20,39 +20,57 @@
   @import url('{{ core_styles_cdn_url }}/dist/trumps/s-form--portal.css') layer(project);
   @import url('{{ core_styles_cdn_url }}/dist/settings/color--portal.css') layer(project);
   @import url('{{ core_styles_cdn_url }}/dist/settings/font--portal.css') layer(project);
+  /* NOTE: authenticator uses v3 but that version does not have a spinner */
+  @import url('{{ core_styles_cdn_url }}/dist/vendors/bootstrap5--border-spinner.css') layer(project);
 </style>
 {% endwith %}
 {% endblock %}
 
 {% block head_extra %}
 <style>
-body {
-  background-color: var(--global-color-primary--light);
+  body {
+    background-color: var(--global-color-primary--light);
 
-  /* So body is as tall as page, thus sticky footer sticks to bottom of page */
-  /* FAQ: Replaces base.html fixed footer because it has a disadvantage—
+    /* So body is as tall as page, thus sticky footer sticks to bottom of page */
+    /* FAQ: Replaces base.html fixed footer because it has a disadvantage—
           it covers the login form on screens shorter than the form */
-  min-height: 100vh;
-}
+    min-height: 100vh;
+  }
 </style>
+<template id="loading-content">
+  <span class="sr-only" role="status">Loading...</span>
+  <span class="spinner-border" aria-hidden="true"></span>
+</template>
+<script type="module">
+    const form = document.querySelector('form');
+    const submitButton = form.querySelector('[type="submit"]');
+    const loadingTemplate = document.getElementById('loading-content');
+    const loadingContent = loadingTemplate.content.cloneNode(true);
+    const fields = form.querySelectorAll('input:not([hidden], select, textarea');
+
+    form.addEventListener('submit', (event) => {
+      /* To show user the submission is in progress */
+      submitButton.setAttribute('data-state', 'busy');
+      submitButton.append(...loadingContent.childNodes);
+
+      /* To show user what was entered is what will be processed */
+      [...fields].forEach(field => {
+        field.setAttribute('readonly', '');
+      });
+    });
+</script>
 {% endblock %}
 
-{# So banner is NOT rendered #}
-{% block banner %}
-{% endblock %}
+  {# So banner is NOT rendered #}
+  {% block banner %}
+  {% endblock %}
 
-{% block footer %}
-<footer class="s-footer">
-  <p>Tapis project funded by NSF OAC grants
-    <a
-      href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=1931439"
-      rel="noreferrer"
-      target="_blank">#1931439</a>,
-    <a
-      href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=1931575"
-      rel="noreferrer"
-      target="_blank">#1931575</a>
-    and #2232259.
-  </p>
-</footer>
-{% endblock %}
+  {% block footer %}
+  <footer class="s-footer">
+    <p>Tapis project funded by NSF OAC grants
+      <a href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=1931439" rel="noreferrer" target="_blank">#1931439</a>,
+      <a href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=1931575" rel="noreferrer" target="_blank">#1931575</a>
+      and #2232259.
+    </p>
+  </footer>
+  {% endblock %}

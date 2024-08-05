@@ -7,6 +7,9 @@
 
 
 # it is required that the operator export API_NAME=<name_of_the_api> before using this makefile/
+ifndef API_NAME
+-include .env
+endif
 api=${API_NAME}
 
 cwd=$(shell pwd)
@@ -39,7 +42,7 @@ clean: down
 
 # ----- start databases
 run_dbs: build.api down
-	cd $(cwd); docker-compose up -d postgres; docker-compose up -d authenticator-ldap
+	cd $(cwd); docker-compose --compatibility up -d postgres; docker-compose up -d authenticator-ldap
 
 # ----- connect to db as root
 connect_db:

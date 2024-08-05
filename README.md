@@ -13,8 +13,12 @@ First, make sure the following passwords are set correctly.
    in develop.
 2. Within ``docker-compose.yml``, update the ``LDAP_ROOTPASS`` to match the ``password`` key in the secret ``ldap.tapis-dev`` stored in SK.
 
-#### Working With Secrets in the SK ####
-We are now storing LDAP secrets within the SK. To retrieve them, use the Python SDK with a token representing the
+#### Working With Secrets in the Tapis Security Kernel (SK) ####
+We are now storing LDAP secrets within the Tapis Security Kernel (SK). This is the official Tapis service for
+storing secrets and authorization data. For more background information on the Tapis SK, see 
+the [documentation](https://tapis.readthedocs.io/en/latest/technical/security.html).
+
+To retrieve them, use the Python SDK with a token representing the
 authenticator. For example:
 
 List all secrets:
@@ -41,6 +45,8 @@ be sure to run:
 ```
 $ export API_NAME=authenticator
 ```
+
+Alternatively, create a `.env` file with the content `API_NAME=authenticator`.
 
 The `API_NAME` variable is used to let the `make` system know which Tapis service to work with.
 
@@ -153,7 +159,7 @@ from service.models import TenantConfig, db
 import json
 c = TenantConfig.query.filter_by(tenant_id='jupyter-tacc-dev')[0]
 d = {"tacc": {"grant_types": [], "privacy_idea_client_id": "<get_from_stache>", "privacy_idea_client_key": "<get_from_stache>", "privacy_idea_url": "https://pidea02.tacc.utexas.edu", "realm": "tacc"}}
-c.mfa_config = json_dumps(d)
+c.mfa_config = json.dumps(d)
 db.session.commit()
 ```
 

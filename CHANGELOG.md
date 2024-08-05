@@ -1,6 +1,92 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.6.2 - 2024-06-18 (estimate)
+### Breaking Changes:
+- None
+
+### New features:
+- None 
+
+### Bug Fixes:
+- This minor release updates Authenticator to the latest tapisservice Python package, 1.6.0 
+  (previously it was 1.4.0). See issue #70.
+
+
+## 1.6.1 - 2024-05-21
+### Breaking Changes:
+- None
+
+### New features:
+- None 
+
+### Bug Fixes:
+- This release changes the behavior of the limit and offset paging query parameters in the Profiles API so that, 
+  whenever an offset value is sent that is larger that the size of the collection, no records are returned. 
+  Prior to this release, whenever an offset larger than the collection was sent, the query would "wrap" around 
+  and send results from the start of the collection.
+- Since LDAP DNs are almost always case insensitive, usernames that are the same up to case are equivalent 
+  for binding. This change updates the check of a username/password combination to reject any username that 
+  contains uppercase letters. This prevents an issue where users could authenticate with different usernames 
+  that are the same up to case and retrieve JWTs with different subjects. (See issue #69).
+
+  
+
+## 1.6.0 - 2024-02-06
+
+### Breaking Changes:
+- None
+
+### New features:
+- None 
+
+### Bug Fixes:
+- Fix issue impacting the implicit grant type from working in cases where the tenants
+  has configured an LDAP authentication due to response_type being dropped from the login UI. See issue #66 for more details. 
+
+## 1.5.1 - 2023-10-27
+
+### Breaking Changes:
+- None
+
+### New features:
+- Added a new /v3/oauth2/webapp/logout endpoint for testing with the Token Webapp; it removes only the token from the 
+  session, while keeping the authorization server's session in tact. This allows for using the Token Webapp to test 
+  repeated logins within the same authorization server session. 
+
+### Bug Fixes:
+- Fix bug where, for tenants configured with custom OA2 IdPs, a second attempt to authenticate a user via an OAuth2 flow
+  after a user had already authenticated with a previous client (and had established a session) would fail. The issue is 
+  that, in 1.5.0, we remove the orig_client_* attributes from the session on successful login; however, for custom OA2
+  IdPs, we expect to get the client_id out of the session. This will fail on the first call to /authorize in such cases.
+
+
+## 1.5.0 - 2023-10-17
+
+### Breaking Changes:
+- None
+
+### New features:
+- Tenants are now able to determine how long the MFA authentication should last before the user has to re-enter their MFA
+- Updated HTML - all of the different pages of the authentication workflow now have updated design layouts
+
+### Bug Fixes:
+- The device code flow, starting with GET /v3/device?client_id=<client_id>, is now working for all login methods
+- The language for the user code form of the device flow is now more clear
+
+
+## 1.4.0 - 2023-07-17
+There were no major updates in this release.
+
+### Breaking Changes:
+- None
+
+### New features:
+- None
+
+### Bug fixes:
+- None
+
 
 ## 1.3.5 - 2023-06-27 (target)
 ### Breaking Changes:

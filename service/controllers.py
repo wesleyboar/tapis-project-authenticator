@@ -14,6 +14,7 @@ from openapi_core import openapi_request_validator
 from openapi_core.contrib.flask import FlaskOpenAPIRequest
 import sqlalchemy
 import secrets
+import random
 
 from tapisservice import errors
 from tapisservice.tapisflask import utils
@@ -370,11 +371,25 @@ def check_client(use_session=False):
         logout()
         raise errors.ResourceError(f"This application is not configured to serve the requested tenant {tenant_id}.")
     if use_session:
+        # note: it is possible that the use_session is true (because this is a third-party OAuth situation, but
+        #       but the client is NOT in the session because this is the
+        logger.debug("Inside check_client, using session")
         client_id = session.get('orig_client_id')
         client_redirect_uri = session.get('orig_client_redirect_uri')
         response_type = session.get('orig_client_response_type')
         client_state = session.get('orig_client_state')
+        if not client_id:
+            logger.debug("The use_session was true, but we didn't find a client in the session so we are looking in query parameters.")
+            # We didn't find the client_id in the session -- it better have been passed in the query parameters
+            # In this case, we expect to find everything in the query params; no mix and match!
+            client_id = request.args.get('client_id')
+            client_redirect_uri = request.args.get('redirect_uri')
+            response_type = request.args.get('response_type')
+            # state is optional -
+            client_state = request.args.get('state')
+
     else:
+        logger.debug("Inside check_client, NOT using session; expecting args in client.")
         # required query parameters:
         client_id = request.args.get('client_id')
         client_redirect_uri = request.args.get('redirect_uri')
@@ -382,6 +397,7 @@ def check_client(use_session=False):
         # state is optional -
         client_state = request.args.get('state')
     if not client_id:
+        logger.debug(f"We did not find a client_id; use_session: {use_session}")
         logout()
         raise errors.ResourceError("Required query parameter client_id missing.")
     # make sure the client exists and the redirect_uri matches
@@ -390,14 +406,16 @@ def check_client(use_session=False):
     if not client:
         logout()
         raise errors.ResourceError("Invalid client.")
+    
+    # Device Code logins do not require the client to have even registered a redirect uri and the flow does not set a response_type
     if 'device_login' in session:
-        return client_id, None, None, None, None
-    if not client_redirect_uri:
-        logout()
-        raise errors.ResourceError("Required query parameter redirect_uri missing.")
+        return client_id, None, client_state, client, response_type
     if not response_type == 'code' and not response_type == 'token' and not response_type == 'device_code':
         logout()
         raise errors.ResourceError("Required query parameter response_type missing or not supported.")
+    if not client_redirect_uri:
+        logout()
+        raise errors.ResourceError("Required query parameter redirect_uri missing.")
     if not client.callback_url == client_redirect_uri:
         logout()
         raise errors.ResourceError(
@@ -482,6 +500,7 @@ class LoginResource(Resource):
         logger.debug("Logging in")
         logger.debug(f"Session: {session}")
         client_id, client_redirect_uri, client_state, client, response_type = check_client()
+        logger.debug(f"client_response_type: {response_type}")
         # selecting a tenant id is required before logging in -
         tenant_id = g.request_tenant_id
         if not tenant_id:
@@ -505,7 +524,8 @@ class LoginResource(Resource):
                    'client_id': client_id,
                    'client_redirect_uri': client_redirect_uri,
                    'client_state': client_state,
-                   'tenant_id': tenant_id}
+                   'tenant_id': tenant_id,
+                   'client_response_type': response_type}
         return make_response(render_template('login.html', **context), 200, headers)
 
     def post(self):
@@ -528,7 +548,8 @@ class LoginResource(Resource):
                    'client_id': client_id,
                    'client_redirect_uri': client_redirect_uri,
                    'client_state': client_state,
-                   'tenant_id': tenant_id}
+                   'tenant_id': tenant_id,
+                   }
         username = request.form.get("username")
         if not username:
             context['error'] = 'Username is required.'
@@ -563,7 +584,10 @@ class LoginResource(Resource):
             if append_idp_to_username:
                 username = f"{username}@{idp_id}"
 
-        response_type = 'code'
+        # response_type = 'code'
+        response_type = request.form.get('client_response_type')
+        if not response_type:
+            response_type = 'code'
         session['username'] = username
         mfa_timestamp = session.get('mfa_timestamp', None)
         mfa_required = needs_mfa(tenant_id, mfa_timestamp)
@@ -574,6 +598,8 @@ class LoginResource(Resource):
             session['mfa_required'] = True
         if session.get('device_login'):
             response_type = 'device_code'
+            if not mfa_required:
+                redirect_url = 'deviceflowresource'
         return redirect(url_for(redirect_url,
                                 client_id=client_id,
                                 redirect_uri=client_redirect_uri,
@@ -600,6 +626,9 @@ class MFAResource(Resource):
         except Exception as e:
             logger.debug(f"Error getting client display name. e: {e}")
 
+        # to let us make field name unique (to prevet autofill of old tokens)
+        mfa_token_ident = str(random.random())[3:]
+
         logger.info(f"Source: {request.args.get('source', None)}")
         logger.info(f"User Code: {request.args.get('user_code', None)}")
 
@@ -609,6 +638,7 @@ class MFAResource(Resource):
                    'client_redirect_uri': client_redirect_uri,
                    'client_state': client_state,
                    'tenant_id': tenant_id,
+                   'mfa_token_name': 'mfa_token_' + mfa_token_ident,
                    'username': session.get('username'),
                    'user_code': request.args.get('user_code', None),
                    'source': request.args.get('source', None)}
@@ -626,7 +656,8 @@ class MFAResource(Resource):
             logger.debug(
                 f"did not find tenant_id in session; issuing redirect to LoginResource. session: {session}")
             return redirect(url_for('loginresource'), 200, headers)
-        mfa_token = request.form.get('mfa_token')
+        mfa_token_name = request.form.get('mfa_token_name')
+        mfa_token = request.form.get(mfa_token_name)
         source = request.form.get('source', None)
         user_code = request.form.get('user_code', None)
 
@@ -651,7 +682,6 @@ class MFAResource(Resource):
                 redirect_url = 'webapptokenandredirect'
             session['mfa_validated'] = True
             session['mfa_timestamp'] = time.time()
-            logger.info(f'redirect url: {redirect_url}')
             return redirect(url_for(redirect_url,
                                     client_id=client_id,
                                     redirect_uri=client_redirect_uri,
@@ -662,7 +692,8 @@ class MFAResource(Resource):
                                     source=source))
         else:
             context = {'error': response,
-                   'username': session.get('username')}
+                       'username': session.get('username'),
+                       'mfa_token_name': mfa_token_name}
             return make_response(render_template('mfa.html', **context), 200, headers)
 
 
@@ -827,6 +858,14 @@ class AuthorizeResource(Resource):
         is_device_flow = True if 'device_login' in session else False
         # if we are using the multi_idp custom oa2 extension type it is possible we are being redirected here, not by the 
         # original web client, but by our select_idp page, in which case we need to get the client out of the session.
+        
+        # Update: 10/23/2023 JFS: the idp_id could be in the session but the client_id could not be. This would happen
+        # if the following steps were taken:
+        #    1) user logs in with client 1. the idp_id gets set in the session here.
+        #    2) user completes oauth flow with client 1; client 1 gets a token. at this point the orig_client is removed
+        #       from the session (via clear_orig_client_data)
+        #    3) user starts a new flow with client 2. at this point, the client_id is not in the session BUT
+        #       the user's login info (including idp_id) IS still.
         if session.get('idp_id'):
             client_id, client_redirect_uri, client_state, client, response_type = check_client(use_session=True)
         else:    
@@ -865,6 +904,7 @@ class AuthorizeResource(Resource):
                 raise errors.ResourceError(f"The authorization_code grant type is not allowed for this "
                                            f"tenant. Allowable grant types: {allowable_grant_types}")
         if response_type == 'device_code':
+            logger.info("device_code response type")
             if 'device_code' not in allowable_grant_types:
                 raise errors.ResourceError(f"The device_code grant type is not allowed for this "
                                            f"tenant. Allowable grant types: {allowable_grant_types}")
@@ -1041,6 +1081,8 @@ class AuthorizeResource(Resource):
                 raise errors.ResourceError("Failure to generate an access token; please try again later.")
             url = f'{client.callback_url}?access_token={access_token}&state={state}&expires_in={expires_in}&token_type=Bearer'
             logger.debug(f"issuing redirect to {client.callback_url}")
+            if session.get('idp_id'):
+                clear_orig_client_data()
             return redirect(url)
 
         # authorization_code grant type ---------------------------------------------
@@ -1068,6 +1110,8 @@ class AuthorizeResource(Resource):
             # issue redirect to client callback_url with authorization code:
             url = f'{client.callback_url}?code={authz_code}&state={state}'
             logger.debug(f"issuing redirect to {client.callback_url}")
+            if session.get('idp_id'):
+                clear_orig_client_data()
             return redirect(url)
 
         elif client_response_type == 'device_code':
@@ -1124,7 +1168,7 @@ class AuthorizeResource(Resource):
             if session.get('idp_id'):
                 device_code.tapis_idp_id = session.get('idp_id')
             try:
-                logger.debug(f"Updating device code: {device_code}")
+                logger.info(f"Updating device code: {device_code}")
                 db.session.commit()
             except Exception as e:
                 logger.error(f"Error updating {device_code}; e: {e}")
@@ -1140,6 +1184,8 @@ class AuthorizeResource(Resource):
                    'device_login': session.get('device_login', '')}
                 return make_response(render_template("authorize.html", **context), 200, headers)
             session.pop('device_login')
+            if session.get('idp_id'):
+                clear_orig_client_data()
             return make_response(render_template("success.html"), 200, headers)
 
 
@@ -1688,6 +1734,18 @@ def logout():
     session.pop('orig_client_response_type', None)
     session.pop('orig_client_state', None)
 
+def clear_orig_client_data():
+    session.pop('orig_client_id', None)
+    session.pop('orig_client_redirect_uri', None)
+    session.pop('orig_client_response_type', None)
+    session.pop('orig_client_state', None)
+
+def logout_from_webapp():
+    """
+    Helper function that just removes the Token Webapp's attributes from the session.
+    """
+    session.pop('access_token', None)
+
 
 class WebappTokenAndRedirect(Resource):
     """
@@ -1712,7 +1770,6 @@ class WebappTokenAndRedirect(Resource):
             has_valid_session = True
             context = {'error': None,
                        'token': token}
-            headers = {'Content-Type': 'text/html'}
             # call the userinfo endpoint
             url = f'{base_redirect_url}/v3/oauth2/userinfo'
             headers = {'X-Tapis-Token': token}
@@ -1726,7 +1783,7 @@ class WebappTokenAndRedirect(Resource):
                 # and start the OAuth flow over again.
                 msg = f'Got exception trying to call userinfo endpoint. Will log out user. Details: {e}'
                 has_valid_session = False
-                logout()
+                logout_from_webapp()
                 logger.error(msg)
             if has_valid_session:
                 try:
@@ -1735,7 +1792,7 @@ class WebappTokenAndRedirect(Resource):
                     msg = f'Could not get JSON result from userinfo endpoint. Will log out user. Details: rsp: {rsp}'
                     logger.error(msg)
                     has_valid_session = False
-                    logout()
+                    logout_from_webapp()
             if has_valid_session:
                 try:
                     username = user_info['username']
@@ -1859,6 +1916,17 @@ class WebappTokenGen(Resource):
         #  Redirect to oauth2/webapp/token-display
         return redirect(url_for('webapptokenandredirect'))
 
+
+class WebappLogout(Resource):
+    """
+    Implements a logout function for just the Token Webapp; i.e., this endpoint removes only the 
+    webapp attributes from the user's session.
+    """
+
+    def get(self):
+        logger.debug("top of GET /v3/oauth2/webapp/logout")
+        logout_from_webapp()
+        logger.debug(f"User has been logged out of webapp; remaining session keys: {session.keys()}")
 
 class LogoutResource(Resource):
 

@@ -15,6 +15,12 @@
          <span>Enter MFA Token</span>
       </h1>
 
+      {% if tenant_id == "designsafe" %}
+      <p>
+         Multi-Factor Authentication (MFA) is now required. <small><a href="https://docs.tacc.utexas.edu/basics/mfa/" target="_blank">Set up MFA</a> via the <span>TACC&nbsp;User&nbsp;Portal</span>.</small>
+      <p>
+      {% endif %}
+
       {% if error %}
          <ul>
             <li>Error: {{ error }}</li>
@@ -27,7 +33,8 @@
       </div>
       <div class="has-required">
          <label for="mfa_token">Token</label>
-         <input id="mfa_token" type="text" name="mfa_token" placeholder="Enter MFA Token" required>
+         <input id="mfa_token" type="text" name="{{ mfa_token_name }}" placeholder="Enter MFA Token" required autocomplete="one-time-pass">
+         <input type="hidden" name="mfa_token_name" value="{{ mfa_token_name }}">
          <input type="hidden" name="client_id" value="{{ client_id }}">
          <input type="hidden" name="client_redirect_uri" value="{{ client_redirect_uri }}">
          <input type="hidden" name="client_display_name" value="{{ client_display_name }}">
@@ -42,4 +49,21 @@
    </form>
   {% include "./content_footer.html" %}
 </main>
+{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<style>
+   /* To not let certain words break when paragraph is wrapped */
+   /* FAQ: This seemed more robust for other editors than `&nbsp;` */
+  .s-form > p :is(a, span) {
+    white-space: nowrap;
+  }
+
+   /* To allow non-bold text in form descritpion */
+  .s-form > p small {
+    font-size: inherit;
+    font-weight: var(--regular);
+  }
+</style>
 {% endblock %}
