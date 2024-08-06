@@ -51,8 +51,8 @@
     form.addEventListener('submit', (event) => {
       /* To show user the submission is in progress */
       if (submitButtons.length === 1) {
-        submitButton[0].setAttribute('data-state', 'busy');
-        submitButton[0].append(...loadingContent.childNodes);
+        submitButtons[0].setAttribute('data-state', 'busy');
+        submitButtons[0].append(...loadingContent.childNodes);
       }
 
       /* To show user what was entered is what will be processed */
