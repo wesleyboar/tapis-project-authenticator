@@ -626,9 +626,6 @@ class MFAResource(Resource):
         except Exception as e:
             logger.debug(f"Error getting client display name. e: {e}")
 
-        # to let us make field name unique (to prevet autofill of old tokens)
-        mfa_token_ident = str(random.random())[3:]
-
         logger.info(f"Source: {request.args.get('source', None)}")
         logger.info(f"User Code: {request.args.get('user_code', None)}")
 
@@ -638,7 +635,7 @@ class MFAResource(Resource):
                    'client_redirect_uri': client_redirect_uri,
                    'client_state': client_state,
                    'tenant_id': tenant_id,
-                   'mfa_token_name': 'mfa_token_' + mfa_token_ident,
+                   'mfa_token_name': self.create_token(),
                    'username': session.get('username'),
                    'user_code': request.args.get('user_code', None),
                    'source': request.args.get('source', None)}
@@ -693,9 +690,16 @@ class MFAResource(Resource):
         else:
             context = {'error': response,
                        'username': session.get('username'),
-                       'mfa_token_name': mfa_token_name}
+                       'mfa_token_name': self.create_token()}
             return make_response(render_template('mfa.html', **context), 200, headers)
 
+    def create_token(self):
+        """
+        Create unique token field name (to prevet autofill of old tokens)
+        """
+        mfa_token_ident = str(random.random())[3:]
+
+        return 'mfa_token_' + mfa_token_ident
 
 class DeviceFlowResource(Resource):
     """
