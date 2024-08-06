@@ -31,7 +31,7 @@
       </div>
       <div class="has-required">
          <label for="mfa_token">Token</label>
-         <input id="mfa_token" type="text" name="{{ mfa_token_name }}" placeholder="Enter MFA Token" required autocomplete="one-time-pass">
+         <input id="mfa_token" type="text" name="{{ mfa_token_name }}" placeholder="Enter MFA Token" autofocus required autocomplete="one-time-pass">
          <input type="hidden" name="mfa_token_name" value="{{ mfa_token_name }}">
          <input type="hidden" name="client_id" value="{{ client_id }}">
          <input type="hidden" name="client_redirect_uri" value="{{ client_redirect_uri }}">
