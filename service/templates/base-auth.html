@@ -51,9 +51,16 @@
     form.addEventListener('submit', (event) => {
       /* To show user the submission is in progress */
       if (submitButtons.length === 1) {
-        submitButtons[0].setAttribute('data-state', 'busy');
-        submitButtons[0].setAttribute('disabled', '');
-        submitButtons[0].append(...loadingContent.childNodes);
+        const submitButton = submitButtons[0];
+
+        submitButton.setAttribute('data-state', 'busy');
+        submitButton.append(...loadingContent.childNodes);
+
+        /* To not disable buttons that have a value to submit */
+        /* FAQ: Or else value will not be submitted */
+        if ( ! submitButton.hasAttribute(value)) {
+          submitButton.setAttribute('disabled', '');
+        }
       }
 
       /* To show user what was entered is what will be processed */
