@@ -5,7 +5,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import json
 import time
-from flask import g, request, Response, render_template, redirect, make_response, send_from_directory, session, url_for, jsonify, current_app
+from flask import g, request, Response, render_template, redirect, make_response, send_from_directory, session, url_for, jsonify
 from flask_restful import Resource
 from openapi_core import openapi_request_validator
 from openapi_core.contrib.flask import FlaskOpenAPIRequest
@@ -25,9 +25,6 @@ from service.models import db, TenantConfig, AccessTokens, RefreshTokens, Client
 from service.ldap import list_tenant_users, get_tenant_user, check_username_password
 from service.oauth2ext import OAuth2ProviderExtension
 from service.mfa import needs_mfa, call_mfa, check_mfa_expired, check_sms, send_sms
-
-# get UI customizations
-from service.config.tenant_ui import TENANT_UI_CONFIG
 
 # get the logger instance -
 from tapisservice.logs import get_logger
