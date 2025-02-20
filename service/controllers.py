@@ -27,7 +27,7 @@ from service.oauth2ext import OAuth2ProviderExtension
 from service.mfa import needs_mfa, call_mfa, check_mfa_expired, check_sms, send_sms
 
 # get UI customizations
-from service.tenant_ui_config import TENANT_UI_CONFIG
+from service.config.tenant_ui import TENANT_UI_CONFIG
 
 # get the logger instance -
 from tapisservice.logs import get_logger
