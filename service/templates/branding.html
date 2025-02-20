@@ -2,6 +2,7 @@
 {% set brands = config['branding'] %}
 {% set has_multiple = brands|length > 1 %}
 {% set size = '30%' if has_multiple else '70%' %}
+{% set brand_other_src = brands[0]['other_src'] if 'other_src' in brands[0] else brands[0]['src'] %}
 
 {% if is_banner %}
   <div class="row">
@@ -13,7 +14,7 @@
   </div>
   {% else %}
   <div class="container">
-    <img src="{{ brands[0]['src'] }}" alt="{{ brands[0]['alt'] }}" class="img-responsive" style="width:{{ size }}; height:{{ size }}">
+    <img src="{{ brand_other_src }}" alt="{{ brands[0]['alt'] }}" class="img-responsive" style="width:{{ size }}; height:{{ size }}">
   </div>
 
 {% endif %}

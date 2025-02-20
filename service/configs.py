@@ -5,7 +5,8 @@ Configuration data e.g. for tenant-specific UI customizations.
 TENANT_UI = {
   "default": {
     "branding": [{
-        "src": "authorize/tapis.jpg",
+        "src": "authorize/tapis.png",
+        "other_src": "authorize/tapis.jpg",
         "alt": "Tapis"
     }],
     "login": {
