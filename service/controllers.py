@@ -5,7 +5,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import json
 import time
-from flask import g, request, Response, render_template, redirect, make_response, send_from_directory, session, url_for, jsonify
+from flask import g, request, Response, render_template, redirect, make_response, send_from_directory, session, url_for, jsonify, current_app
 from flask_restful import Resource
 from openapi_core import openapi_request_validator
 from openapi_core.contrib.flask import FlaskOpenAPIRequest
@@ -26,6 +26,8 @@ from service.ldap import list_tenant_users, get_tenant_user, check_username_pass
 from service.oauth2ext import OAuth2ProviderExtension
 from service.mfa import needs_mfa, call_mfa, check_mfa_expired, check_sms, send_sms
 
+# get UI customizations
+from service.tenant_ui_config import TENANT_UI_CONFIG
 
 # get the logger instance -
 from tapisservice.logs import get_logger
@@ -2047,3 +2049,10 @@ class LogoutResource(Resource):
 class StaticFilesResource(Resource):
     def get(self, path):
         return send_from_directory('templates', path)
+
+def init_flask_app(app):
+    @app.context_processor
+    def inject_tenant_ui_config():
+        return {'tenant_ui_config': TENANT_UI_CONFIG}
+    
+    return app

@@ -1,5 +1,8 @@
 {% extends 'base-auth.html' %}
 
+{% set config = tenant_ui_config.get(tenant_id, tenant_ui_config['default']) %}
+{% set login_opts = config['login'] %}
+
 {% block content %}
 <main class="s-form-page">
   <form action="" method="post" class="s-form s-form--login">
@@ -39,26 +42,18 @@
     <input type="hidden" name="client_state" value="{{ client_state }}">
     <input type="hidden" name="client_response_type" value="{{ client_response_type }}">
     <footer>
-      {% if tenant_id == 'apcd' %}
-        <a href="https://accounts.tacc.utexas.edu/apcd/register" rel="noreferrer" target="_blank">
-      {% else %}
-        <a href="https://accounts.tacc.utexas.edu/register" rel="noreferrer" target="_blank">
-      {% endif %}
-      Create Account
-        </a>
-        <button type="submit">Log In</button>
+      <a href="{{ login_opts['register_url'] }}" rel="noreferrer" target="_blank">
+        Create Account
+      </a>
+      <button type="submit">Log In</button>
     </footer>
     <nav>
       <p>Having trouble?</p>
-      {% if tenant_id == 'apcd' %}
-      <a href="mailto:support@tickets.txapcd.org" rel="nonreferrer" target="_blank" >
-        For help, email support@tickets.txapcd.org
+      {% for help in login_opts['help_links'] %}
+      <a href="{{ help['url'] }}" rel="noreferrer" target="_blank">
+        {{ help['text'] }}
       </a>
-      {% else %}
-      <a href="https://tacc.utexas.edu/about/help/" rel="noreferrer" target="_blank">
-        Account Help
-      </a>
-      {% endif %}
+      {% endfor %}
     </nav>
   </form>
   <footer>

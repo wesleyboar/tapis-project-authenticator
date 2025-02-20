@@ -1,0 +1,282 @@
+diff --git a/service/controllers.py b/service/controllers.py
+index ae4f7bc4..c7f3edd8 100644
+--- a/service/controllers.py
++++ b/service/controllers.py
+@@ -26,6 +26,8 @@ from service.ldap import list_tenant_users, get_tenant_user, check_username_pass
+ from service.oauth2ext import OAuth2ProviderExtension
+ from service.mfa import needs_mfa, call_mfa, check_mfa_expired, check_sms, send_sms
+ 
++# get UI customizations
++from service.tenant_ui_config import TENANT_UI_CONFIG
+ 
+ # get the logger instance -
+ from tapisservice.logs import get_logger
+@@ -585,6 +587,7 @@ class LoginResource(Resource):
+                    'client_redirect_uri': client_redirect_uri,
+                    'client_state': client_state,
+                    'tenant_id': tenant_id,
++                   'tenant_ui': TENANT_UI_CONFIG,
+                    'client_response_type': response_type}
+         return make_response(render_template('login.html', **context), 200, headers)
+ 
+@@ -609,7 +612,7 @@ class LoginResource(Resource):
+                    'client_redirect_uri': client_redirect_uri,
+                    'client_state': client_state,
+                    'tenant_id': tenant_id,
+-                   }
++                   'tenant_ui': TENANT_UI_CONFIG}
+         username = request.form.get("username")
+         if not username:
+             context['error'] = 'Username is required.'
+@@ -704,7 +707,8 @@ class MFAResource(Resource):
+                    'mfa_token_name': self.create_token(),
+                    'username': session.get('username'),
+                    'user_code': request.args.get('user_code', None),
+-                   'source': request.args.get('source', None)}
++                   'source': request.args.get('source', None),
++                   'tenant_ui': TENANT_UI_CONFIG}
+         return make_response(render_template('mfa.html', **context), 200, headers)
+ 
+     def post(self):
+@@ -1049,7 +1053,8 @@ class AuthorizeResource(Resource):
+                    'client_response_type': response_type,
+                    'client_state': client_state,
+                    'device_login': session.get('device_login', None),
+-                   'user_code': request.args.get('user_code', None)}
++                   'user_code': request.args.get('user_code', None),
++                   'tenant_ui': TENANT_UI_CONFIG}
+ 
+         return make_response(render_template('authorize.html', **context), 200, headers)
+ 
+diff --git a/service/templates/branding.html b/service/templates/branding.html
+index ef0eadcf..6155c880 100644
+--- a/service/templates/branding.html
++++ b/service/templates/branding.html
+@@ -1,46 +1,28 @@
+-{% if is_banner %}
++{% set config = tenant_ui.get(tenant_id, tenant_ui['default']) %}
++{% set brands = config['branding'] %}
++{% set has_multiple = brands|length > 1 %}
++{% set width = '30%' if has_multiple else '70%' %}
+ 
+-  {% if tenant_id == "jupyter-tacc-dev" %}
+-  <div class="container">
+-    <img src="authorize/icicle-logo.png" alt="Icicle" class="img-responsive" style="width:70%; height:70%">
+-  </div>
+-  {% elif tenant_id == "designsafe" %}
++{% if has_multiple %}
+   <div class="row">
+-    <div class = "column">
+-      <img src="authorize/designsafe.svg" alt="DesignSafe" class="img-responsive" style="width:30%; height:30%">
+-    </div>
+-    <div class = "column">
+-      <img src="authorize/tacc.jpg" alt="TACC" class="img-responsive" style="width:30%; height:30%">
++    {% for brand in brands %}
++    <div class="column">
++      <img
++        src="{{ brand['src'] }}"
++        alt="{{ brand['alt'] }}"
++        class="img-responsive"
++        style="width:{{ width }}; height:{{ width }}"
++      >
+     </div>
++    {% endfor %}
+   </div>
+-  {% elif tenant_id == "icicle" %}
+-  <div class = "container">
+-    <img src="authorize/icicle-logo.png" alt="Icicle" class="img-responsive" style="width:70%; height:70%">
+-  </div>
+-  {% elif tenant_id == "dev" %}
+-  <div class = "container">
+-    <img src="authorize/dev.jpeg" alt="Dev" class="img-responsive" style="width:70%; height:70%">
+-  </div>
+-  {% else %}
++{% else %}
+   <div class="container">
+-      <img src="authorize/tapis.jpg" alt="Tapis" class="img-responsive" style="width:70%; height:70%">
++    <img
++      src="{{ brands[0]['src'] }}"
++      alt="{{ brands[0]['alt'] }}"
++      class="img-responsive"
++      style="width:{{ width }}; height:{{ width }}"
++    >
+   </div>
+-  {% endif %}
+-
+-{% else %}
+-
+-  {% if tenant_id == "jupyter-tacc-dev" %}
+-    <img src="authorize/icicle-logo.png" alt="Icicle">
+-  {% elif tenant_id == "designsafe" %}
+-    <img src="authorize/designsafe.svg" alt="DesignSafe">
+-  {% elif tenant_id == "icicle" %}
+-    <img src="authorize/icicle-logo.png" alt="Icicle">
+-  {% elif tenant_id == "dev" %}
+-    <img src="authorize/dev.jpeg" alt="Dev">
+-  {% elif tenant_id == "tacc" %}
+-    <img src="authorize/tacc-formal.svg" alt="TACC">
+-  {% else %}
+-    <img src="authorize/tapis.png" alt="Tapis">
+-  {% endif %}
+-
+ {% endif %}
+diff --git a/service/templates/login.html b/service/templates/login.html
+index 23f86ad4..25fe646e 100644
+--- a/service/templates/login.html
++++ b/service/templates/login.html
+@@ -15,9 +15,11 @@
+       <span>Log In</span>
+     </h1>
+     <p>to continue to the <var>{{ client_display_name }}</var></p>
+-    {% if client_display_name == 'DesignSafe JupyterHub' %}
+-      <p>Warning: Files saved in the top most directory will be wiped on server restart. Please save files to MyData or to a Project.</p>
+-    {% endif %}
++    
++    {% set config = tenant_ui.get(tenant_id, tenant_ui['default']) %}
++    {% for warning in config['login']['warnings'] %}
++      <p>Warning: {{ warning }}</p>
++    {% endfor %}
+ 
+     {% if error %}
+     <ul>
+@@ -39,26 +41,18 @@
+     <input type="hidden" name="client_state" value="{{ client_state }}">
+     <input type="hidden" name="client_response_type" value="{{ client_response_type }}">
+     <footer>
+-      {% if tenant_id == 'apcd' %}
+-        <a href="https://accounts.tacc.utexas.edu/apcd/register" rel="noreferrer" target="_blank">
+-      {% else %}
+-        <a href="https://accounts.tacc.utexas.edu/register" rel="noreferrer" target="_blank">
+-      {% endif %}
+-      Create Account
+-        </a>
+-        <button type="submit">Log In</button>
++      <a href="{{ config['login']['register_url'] }}" rel="noreferrer" target="_blank">
++        Create Account
++      </a>
++      <button type="submit">Log In</button>
+     </footer>
+     <nav>
+       <p>Having trouble?</p>
+-      {% if tenant_id == 'apcd' %}
+-      <a href="mailto:support@tickets.txapcd.org" rel="nonreferrer" target="_blank" >
+-        For help, email support@tickets.txapcd.org
+-      </a>
+-      {% else %}
+-      <a href="https://tacc.utexas.edu/about/help/" rel="noreferrer" target="_blank">
+-        Account Help
++      {% for help in config['login']['help_links'] %}
++      <a href="{{ help['url'] }}" rel="noreferrer" target="_blank">
++        {{ help['text'] }}
+       </a>
+-      {% endif %}
++      {% endfor %}
+     </nav>
+   </form>
+   <footer>
+diff --git a/service/tenant_ui_config.py b/service/tenant_ui_config.py
+new file mode 100644
+index 00000000..ad770978
+--- /dev/null
++++ b/service/tenant_ui_config.py
+@@ -0,0 +1,100 @@
++"""
++Configuration data for tenant-specific UI customizations.
++"""
++
++TENANT_UI_CONFIG = {
++  "default": {
++    "branding": [{
++        "src": "authorize/tapis.jpg",
++        "alt": "Tapis"
++    }],
++    "login": {
++        "register_url": "https://accounts.tacc.utexas.edu/register",
++        "help_links": [{
++            "url": "https://tacc.utexas.edu/about/help/",
++            "text": "Account Help"
++        }]
++    }
++  },
++  "jupyter-tacc-dev": {
++    "branding": [{
++        "src": "authorize/icicle-logo.png",
++        "alt": "Icicle"
++    }],
++    "login": {
++        "register_url": "https://accounts.tacc.utexas.edu/register",
++        "help_links": [{
++            "url": "https://tacc.utexas.edu/about/help/",
++            "text": "Account Help"
++        }]
++    }
++  },
++  "designsafe": {
++    "branding": [{
++        "src": "authorize/designsafe.svg",
++        "alt": "DesignSafe"
++    }, {
++        "src": "authorize/tacc.jpg",
++        "alt": "TACC"
++    }],
++    "login": {
++        "register_url": "https://accounts.tacc.utexas.edu/register",
++        "help_links": [{
++            "url": "https://tacc.utexas.edu/about/help/",
++            "text": "Account Help"
++        }]
++    }
++  },
++  "icicle": {
++    "branding": [{
++        "src": "authorize/icicle-logo.png",
++        "alt": "Icicle"
++    }],
++    "login": {
++        "register_url": "https://accounts.tacc.utexas.edu/register",
++        "help_links": [{
++            "url": "https://tacc.utexas.edu/about/help/",
++            "text": "Account Help"
++        }]
++    }
++  },
++  "dev": {
++    "branding": [{
++        "src": "authorize/dev.jpeg",
++        "alt": "Dev"
++    }],
++    "login": {
++        "register_url": "https://accounts.tacc.utexas.edu/register",
++        "help_links": [{
++            "url": "https://tacc.utexas.edu/about/help/",
++            "text": "Account Help"
++        }]
++    }
++  },
++  "apcd": {
++    "branding": [{
++        "src": "authorize/tapis.jpg",
++        "alt": "Tapis"
++    }],
++    "login": {
++        "register_url": "https://accounts.tacc.utexas.edu/apcd/register",
++        "help_links": [{
++            "url": "mailto:support@tickets.txapcd.org",
++            "text": "For help, email support@tickets.txapcd.org"
++        }]
++    }
++  },
++  "tacc": {
++    "branding": [{
++        "src": "authorize/tacc-formal.svg",
++        "alt": "TACC"
++    }],
++    "login": {
++        "register_url": "https://accounts.tacc.utexas.edu/register",
++        "help_links": [{
++            "url": "https://tacc.utexas.edu/about/help/",
++            "text": "Account Help"
++        }]
++    }
++  }
++}
