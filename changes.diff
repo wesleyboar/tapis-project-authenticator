@@ -280,3 +280,152 @@ index 00000000..ad770978
 +    }
 +  }
 +}
+diff --git a/service/config/tenant_ui.py b/service/configs.py
+similarity index 96%
+rename from service/config/tenant_ui.py
+rename to service/configs.py
+index ad770978..ede82fb1 100644
+--- a/service/config/tenant_ui.py
++++ b/service/configs.py
+@@ -1,8 +1,8 @@
+ """
+-Configuration data for tenant-specific UI customizations.
++Configuration data e.g. for tenant-specific UI customizations.
+ """
+ 
+-TENANT_UI_CONFIG = {
++TENANT_UI = {
+   "default": {
+     "branding": [{
+         "src": "authorize/tapis.jpg",
+diff --git a/service/models.py b/service/models.py
+index ab953069..e911d270 100644
+--- a/service/models.py
++++ b/service/models.py
+@@ -15,6 +15,7 @@ from tapisservice.errors import DAOError, ServiceConfigError
+ from tapisservice.logs import get_logger
+ from service.errors import InvalidAuthorizationCodeError, InvalidDeviceCodeError
+ 
++from service.configs import TENANT_UI as TENANT_UI_CONFIG
+ 
+ from service import MIGRATIONS_RUNNING
+ 
+@@ -29,6 +30,11 @@ app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(minutes=15)
+ 
+ app.secret_key = os.environ.get('AUTHENTICATOR_APP_SECRET_KEY', b"AGHsjfh!#%$SNFJqw")
+ 
++# Add context processor for tenant UI config
++@app.context_processor
++def inject_tenant_ui_config():
++    return {'tenant_ui_config': TENANT_UI_CONFIG}
++
+ try:
+     full_db_url = f'postgresql://{conf.postgres_user}:{conf.postgres_password}@{conf.sql_db_url}'
+ except Exception as e:
+diff --git a/changes.diff b/changes.diff
+index c1c0f12d..4152cc3a 100644
+--- a/changes.diff
++++ b/changes.diff
+@@ -280,3 +280,45 @@ index 00000000..ad770978
+ +    }
+ +  }
+ +}
++diff --git a/service/config/tenant_ui.py b/service/configs.py
++similarity index 96%
++rename from service/config/tenant_ui.py
++rename to service/configs.py
++index ad770978..ede82fb1 100644
++--- a/service/config/tenant_ui.py
+++++ b/service/configs.py
++@@ -1,8 +1,8 @@
++ """
++-Configuration data for tenant-specific UI customizations.
+++Configuration data e.g. for tenant-specific UI customizations.
++ """
++ 
++-TENANT_UI_CONFIG = {
+++TENANT_UI = {
++   "default": {
++     "branding": [{
++         "src": "authorize/tapis.jpg",
++diff --git a/service/models.py b/service/models.py
++index ab953069..e911d270 100644
++--- a/service/models.py
+++++ b/service/models.py
++@@ -15,6 +15,7 @@ from tapisservice.errors import DAOError, ServiceConfigError
++ from tapisservice.logs import get_logger
++ from service.errors import InvalidAuthorizationCodeError, InvalidDeviceCodeError
++ 
+++from service.configs import TENANT_UI as TENANT_UI_CONFIG
++ 
++ from service import MIGRATIONS_RUNNING
++ 
++@@ -29,6 +30,11 @@ app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(minutes=15)
++ 
++ app.secret_key = os.environ.get('AUTHENTICATOR_APP_SECRET_KEY', b"AGHsjfh!#%$SNFJqw")
++ 
+++# Add context processor for tenant UI config
+++@app.context_processor
+++def inject_tenant_ui_config():
+++    return {'tenant_ui_config': TENANT_UI_CONFIG}
+++
++ try:
++     full_db_url = f'postgresql://{conf.postgres_user}:{conf.postgres_password}@{conf.sql_db_url}'
++ except Exception as e:
+diff --git a/service/config/tenant_ui.py b/service/configs.py
+similarity index 96%
+rename from service/config/tenant_ui.py
+rename to service/configs.py
+index ad770978..ede82fb1 100644
+--- a/service/config/tenant_ui.py
++++ b/service/configs.py
+@@ -1,8 +1,8 @@
+ """
+-Configuration data for tenant-specific UI customizations.
++Configuration data e.g. for tenant-specific UI customizations.
+ """
+ 
+-TENANT_UI_CONFIG = {
++TENANT_UI = {
+   "default": {
+     "branding": [{
+         "src": "authorize/tapis.jpg",
+diff --git a/service/controllers.py b/service/controllers.py
+index 4a004d01..c4600184 100644
+--- a/service/controllers.py
++++ b/service/controllers.py
+@@ -2049,10 +2049,3 @@ class LogoutResource(Resource):
+ class StaticFilesResource(Resource):
+     def get(self, path):
+         return send_from_directory('templates', path)
+-
+-def init_flask_app(app):
+-    @app.context_processor
+-    def inject_tenant_ui_config():
+-        return {'tenant_ui_config': TENANT_UI_CONFIG}
+-    
+-    return app
+diff --git a/service/models.py b/service/models.py
+index ab953069..e911d270 100644
+--- a/service/models.py
++++ b/service/models.py
+@@ -15,6 +15,7 @@ from tapisservice.errors import DAOError, ServiceConfigError
+ from tapisservice.logs import get_logger
+ from service.errors import InvalidAuthorizationCodeError, InvalidDeviceCodeError
+ 
++from service.configs import TENANT_UI as TENANT_UI_CONFIG
+ 
+ from service import MIGRATIONS_RUNNING
+ 
+@@ -29,6 +30,11 @@ app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(minutes=15)
+ 
+ app.secret_key = os.environ.get('AUTHENTICATOR_APP_SECRET_KEY', b"AGHsjfh!#%$SNFJqw")
+ 
++# Add context processor for tenant UI config
++@app.context_processor
++def inject_tenant_ui_config():
++    return {'tenant_ui_config': TENANT_UI_CONFIG}
++
+ try:
+     full_db_url = f'postgresql://{conf.postgres_user}:{conf.postgres_password}@{conf.sql_db_url}'
+ except Exception as e:

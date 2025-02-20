@@ -1,8 +1,8 @@
 """
-Configuration data for tenant-specific UI customizations.
+Configuration data e.g. for tenant-specific UI customizations.
 """
 
-TENANT_UI_CONFIG = {
+TENANT_UI = {
   "default": {
     "branding": [{
         "src": "authorize/tapis.jpg",

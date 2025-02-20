@@ -2049,10 +2049,3 @@ class LogoutResource(Resource):
 class StaticFilesResource(Resource):
     def get(self, path):
         return send_from_directory('templates', path)
-
-def init_flask_app(app):
-    @app.context_processor
-    def inject_tenant_ui_config():
-        return {'tenant_ui_config': TENANT_UI_CONFIG}
-    
-    return app

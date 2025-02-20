@@ -12,12 +12,18 @@ from service.controllers import AuthorizeResource, ClientsResource, ClientResour
     RevokeTokensResource, SetIdentityProvider, WebappLogout, OIDCjwksResource, OIDCTokensResource#, OIDCUserInfoResource
 from service.ldap import populate_test_ldap
 from service.models import db, app, initialize_tenant_configs
+from service.configs import TENANT_UI as TENANT_UI_CONFIG
 
 from tapisservice.logs import get_logger
 from tapisservice.errors import BaseTapisError
 
 
 logger = get_logger(__name__)
+
+# provide common context to templates
+@app.context_processor
+def inject_tenant_ui_config():
+    return {'tenant_ui_config': TENANT_UI_CONFIG}
 
 # authentication and authorization ---
 @app.before_request
