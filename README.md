@@ -360,7 +360,7 @@ Your client application code should handle this GET request by making a request 
 the authorization code for an OAuth token. 
 
 ```
-4) POST http://localhost:5000/v3/oauth2/token
+4) POST http://localhost:5000/v3/oauth2/tokens
         grant_type=authorization_code
         code=<some_code>
         redirect_uri=<your_redirct_uri>
