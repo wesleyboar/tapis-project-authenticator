@@ -2,7 +2,29 @@
 All notable changes to this project will be documented in this file.
 
 
-## 1.8.2 - 2024-02-28
+## 1.8.4 - 2025-05-30
+### Breaking Changes:
+- None
+
+### New features:
+- Users with SMS configured for MFA will now be able to use SMS via a Tapis OAuth flow.
+
+### Bug Fixes:
+- None 
+
+
+## 1.8.3 - 2025-04-14
+### Breaking Changes:
+- None
+
+### New features:
+- None 
+
+### Bug Fixes:
+- Fix to user info endpoint. 
+
+
+## 1.8.2 - 2025-02-28
 ### Breaking Changes:
 - None
 
