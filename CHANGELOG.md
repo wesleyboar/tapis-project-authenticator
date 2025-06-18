@@ -21,7 +21,8 @@ All notable changes to this project will be documented in this file.
 - None 
 
 ### Bug Fixes:
-- Fix to user info endpoint. 
+- Fix to user info endpoint.
+- Fixed use of OpenAPI v3 spec servers stanza. Tapisservice adds facility to ignore or change expected validated field.
 
 
 ## 1.8.2 - 2025-02-28
