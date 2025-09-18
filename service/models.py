@@ -924,38 +924,52 @@ class Token(object):
 
 def create_clients_for_tenant(tenant_id):
     """
-    Create the OAuth clients for the Token Webapp for a specific tenant_id. There are two clients that get created in
-    each tenant: one with a registered callback using the tenant's base_url and another with a "localhost" callback
-    for running locally.
+    Create the OAuth clients for the Token Webapp for a specific tenant_id.
+
+    There are two clients that get created in each tenant:
+    one with a registered callback using the tenant's base_url and another
+    with a "localhost" callback for running locally.
 
     :param tenant_id: The tenant_id to register the client in.
     :return:
     """
     logger.debug(f"top of create_client for tenant_id: {tenant_id}")
+
     # first register the localhost client:
-    client_id = f'local.{tenant_id}.{conf.client_id}'
+    client_id = f"local.{tenant_id}.{conf.client_id}"
     local_client = {
         "client_id": client_id,
         "client_key": conf.client_key,
-        "callback_url": f'http://localhost:5000{conf.client_callback}',
+        "callback_url": f"http://localhost:5000{conf.client_callback}",
         "display_name": conf.client_display_name,
         "tenant_id": tenant_id,
         "username": "tapis",
-        'create_time':  datetime.datetime.utcnow(),
-        'last_update_time': datetime.datetime.utcnow(),
-        'active': True
+        "create_time": datetime.datetime.utcnow(),
+        "last_update_time": datetime.datetime.utcnow(),
+        "active": True,
     }
     add_client_to_db(local_client)
+
     # now register the client with the tenant's base url:
-    client_id = f'{tenant_id}.{conf.client_id}'
-    callback_url = f'{conf.primary_site_admin_tenant_base_url}{conf.client_callback}'
+    client_id = f"{tenant_id}.{conf.client_id}"
+    callback_url = f"{conf.primary_site_admin_tenant_base_url}{conf.client_callback}"
     # replace "admin" with the tenant_id:
     callback_url = callback_url.replace("admin", tenant_id)
     client = deepcopy(local_client)
-    client['client_id'] = client_id
-    client['callback_url'] = callback_url
+    client["client_id"] = client_id
+    client["callback_url"] = callback_url
     add_client_to_db(client)
-    return local_client, client
+
+    # add client for tapis ui
+    client_id = f"tapisui-implicit-client-{tenant_id}"
+    callback_url = f"{conf.primary_site_admin_tenant_base_url}/#/oauth2"
+    callback_url = callback_url.replace("admin", tenant_id)
+    tapis_ui_client = deepcopy(local_client)
+    tapis_ui_client["client_id"] = client_id
+    tapis_ui_client["callback_url"] = callback_url
+    add_client_to_db(tapis_ui_client)
+
+    return local_client, client, tapis_ui_client
 
 
 def delete_tenant_from_db(tenant_id):
@@ -1022,6 +1036,7 @@ if conf.populate_all_clients:
     logger.debug("populating all clients...")
     # generate a client for every tenant assigned to this instance -
     for tenant_id in conf.tenants:
-        local_client, client = create_clients_for_tenant(tenant_id)
+        local_client, client, tapis_ui_client = create_clients_for_tenant(tenant_id)
         token_webapp_clients[f'local.{tenant_id}'] = local_client
         token_webapp_clients[tenant_id] = client
+        token_webapp_clients[f'tapisui.{tenant_id}'] = tapis_ui_client
