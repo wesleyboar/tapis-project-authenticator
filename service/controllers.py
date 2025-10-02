@@ -919,7 +919,15 @@ class MFAResource(Resource):
             logger.debug(
                 f"did not find tenant_id in session; issuing redirect to LoginResource. session: {session}"
             )
-            return redirect(url_for("loginresource"), 200, headers)
+            return redirect(
+                url_for(
+                    "loginresource",
+                    client_id=client_id,
+                    redirect_uri=client_redirect_uri,
+                    state=client_state,
+                    response_type=response_type,
+                )
+            )
         display_name = ""
         try:
             display_name = client.display_name
@@ -945,19 +953,43 @@ class MFAResource(Resource):
 
     def post(self):
         logger.info("Top of POST MFA Resource")
+
+        headers = {"Content-Type": "text/html"}
         client_id, client_redirect_uri, client_state, client, response_type = (
             check_client()
         )
+
+        action = request.form.get("action", "submit")
+
+        if action == "logout":
+            logout()
+            return redirect(
+                url_for(
+                    "loginresource",
+                    client_id=client_id,
+                    redirect_uri=client_redirect_uri,
+                    state=client_state,
+                    response_type=response_type,
+                )
+            )
+
         tenant_id = g.request_tenant_id
         username = session.get("username")
-        headers = {"Content-Type": "text/html"}
         if not tenant_id:
             tenant_id = session.get("tenant_id")
         if not tenant_id:
             logger.debug(
                 f"did not find tenant_id in session; issuing redirect to LoginResource. session: {session}"
             )
-            return redirect(url_for("loginresource"), 200, headers)
+            return redirect(
+                url_for(
+                    "loginresource",
+                    client_id=client_id,
+                    redirect_uri=client_redirect_uri,
+                    state=client_state,
+                    response_type=response_type,
+                )
+            )
         mfa_token_name = request.form.get("mfa_token_name")
         mfa_token = request.form.get(mfa_token_name)
         source = request.form.get("source", None)
