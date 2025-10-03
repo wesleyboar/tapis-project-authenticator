@@ -1385,7 +1385,7 @@ class AuthorizeResource(Resource):
         # Add check here for auto approve
         # if auto_approve and not device_code flow:
         #     generate_authorization_code()
-        #     auto_redirect = generate_response()
+        #     auto_redirect = handle_response_type()
         #     return auto_redirect
 
         return make_response(render_template("authorize.html", **context), 200, headers)
