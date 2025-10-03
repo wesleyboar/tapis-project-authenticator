@@ -47,6 +47,7 @@ from service.models import (
     DeviceCode,
     token_webapp_clients,
     tenant_configs_cache,
+    User
 )
 from service.ldap import list_tenant_users, get_tenant_user, check_username_password
 from service.oauth2ext import OAuth2ProviderExtension
@@ -1270,7 +1271,7 @@ class AuthorizeResource(Resource):
         user_code=request.args.get("user_code", None)
 
         mfa_response = check_and_redirect_mfa(
-            mfa_config, client_id, client_redirect_uri, client_state, response_type, user_code, session
+            mfa_config, client_id, client_redirect_uri, client_state, response_type, user_code
         )
 
         if mfa_response:
@@ -1359,6 +1360,7 @@ class AuthorizeResource(Resource):
                     response_type=response_type,
                 )
             )
+        username = session["username"]
         tenant_id = g.request_tenant_id
         if not tenant_id:
             tenant_id = session.get("tenant_id")
@@ -1371,7 +1373,7 @@ class AuthorizeResource(Resource):
             logger.debug(f"No client available; e: {e}")
         context = {
             "error": "",
-            "username": session["username"],
+            "username": username,
             "tenant_id": tenant_id,
             "client_display_name": display_name,
             "client_id": client_id,
@@ -1382,11 +1384,26 @@ class AuthorizeResource(Resource):
             "user_code": user_code,
         }
 
+        auto_approve = User.query.filter_by(username=username, client_id=client_id).first()
+        if auto_approve is not None:
+            auto_approve = True
+
         # Add check here for auto approve
-        # if auto_approve and not device_code flow:
-        #     generate_authorization_code()
-        #     auto_redirect = handle_response_type()
-        #     return auto_redirect
+        logger.debug(f'Checking for auto approve ... ')
+        if auto_approve and not is_device_flow:
+            logger.debug(f'Found. Skipping authoriziation page.')
+            generate_authorization_code(tenant_id, username, client_id, client)
+            auto_redirect = handle_response_type(
+                response_type,
+                allowable_grant_types,
+                tenant_id,
+                username,
+                client_id,
+                client,
+                client_state
+            )
+            return auto_redirect
+        logger.debug(f'Not found. Proceeding to authentication page')
 
         return make_response(render_template("authorize.html", **context), 200, headers)
 
@@ -1401,7 +1418,8 @@ class AuthorizeResource(Resource):
             raise errors.ResourceError(
                 "Tenant ID missing from session. Please logout and select a tenant."
             )
-        client_display_name = request.form.get("client_display_name")
+        client_display_name = request.form.get("client_display_name") 
+        username = None
         try:
             username = session["username"]
         except KeyError:
@@ -1424,6 +1442,7 @@ class AuthorizeResource(Resource):
             )
 
         # TODO - move all request form gets to top, remove duplicates
+        always_allow = request.form.get("always_allow")
         state = request.form.get("client_state")
         client_response_type = request.form.get("client_response_type")
         client_id = request.form.get("client_id", None)
@@ -1437,6 +1456,18 @@ class AuthorizeResource(Resource):
             logger.debug(f"client not found in db. client_id: {client_id}")
             raise errors.ResourceError(f"Invalid client: {client_id}")
 
+        # add alawys_allow rule if user has selected
+        if always_allow:
+            logger.debug(f'{username} has selected to always allow {client}')
+            # check if there is already a record for some reason 
+            record_exists = User.query.filter_by(username=username, client_id=client_id).first()
+            logger.debug(f'record exists status: {record_exists} and has type: {type(record_exists)}')
+            if not record_exists:
+                db.session.add(User(client_id=client_id, username=username, always_allow=True))
+            else:
+                logger.debug(f'record to always allow {username}: {client} already exists, skipping creation')
+
+
         # check original response_type passed in by the client and make sure grant type supported by the tenant --
         config = tenant_configs_cache.get_config(tenant_id)
         allowable_grant_types = json.loads(config.allowable_grant_types)
@@ -1444,7 +1475,7 @@ class AuthorizeResource(Resource):
         user_code = request.args.get("user_code", None)
 
         mfa_response = check_and_redirect_mfa(
-            mfa_config, client_id, client.callback_url, state, client_response_type, user_code, session
+            mfa_config, client_id, client.callback_url, state, client_response_type, user_code
         )
 
         if mfa_response:
@@ -2353,7 +2384,8 @@ class WebappTokenGen(Resource):
         tenant_id = g.request_tenant_id
         logger.debug(f"client_id: {client_id}; tenant_id: {tenant_id}")
         # get additional query parameters from request ---
-        state = request.args.get("state")
+        # state = request.args.get("state")
+        state = None
         session_state = session.get("state")
         if not state == session_state:
             logger.error(
@@ -2363,6 +2395,7 @@ class WebappTokenGen(Resource):
                 msg=f"Unauthorized access attempt: state mismatch."
             )
         code = request.args.get("code")
+        logger.debug(f'got code from request:: {code}')
 
         #  POST to oauth2/tokens (passing code, client id, client secret, and redirect uri)
         logger.debug(f"request.base_url: {request.base_url}")
