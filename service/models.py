@@ -650,6 +650,23 @@ class RefreshTokens(db.Model):
     # the last time this record was updated
     last_update_time = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
     
+class User(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.String(80), unique=False, nullable=False, index=True)
+    username = db.Column(db.String(50), unique=False, nullable=False, index=True)
+    always_allow = db.Column(db.Boolean, nullable=False)
+
+    @property
+    def serialize(self):
+        return {
+            "client_id": self.client_id,
+            "username": self.username,
+            "create_time": self.create_time,
+            "last_update_time": self.last_update_time,
+            "always_allow": self.always_allow,
+        }
 
 class LdapUser(object):
     """
