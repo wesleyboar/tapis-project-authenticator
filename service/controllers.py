@@ -47,7 +47,7 @@ from service.models import (
     DeviceCode,
     token_webapp_clients,
     tenant_configs_cache,
-    User
+    Users
 )
 from service.ldap import list_tenant_users, get_tenant_user, check_username_password
 from service.oauth2ext import OAuth2ProviderExtension
@@ -1384,7 +1384,7 @@ class AuthorizeResource(Resource):
             "user_code": user_code,
         }
 
-        auto_approve = User.query.filter_by(username=username, client_id=client_id).first()
+        auto_approve = Users.query.filter_by(username=username, client_id=client_id).first()
         if auto_approve is not None:
             auto_approve = True
 
@@ -1460,10 +1460,10 @@ class AuthorizeResource(Resource):
         if always_allow:
             logger.debug(f'{username} has selected to always allow {client}')
             # check if there is already a record for some reason 
-            record_exists = User.query.filter_by(username=username, client_id=client_id).first()
+            record_exists = Users.query.filter_by(username=username, client_id=client_id).first()
             logger.debug(f'record exists status: {record_exists} and has type: {type(record_exists)}')
             if not record_exists:
-                db.session.add(User(client_id=client_id, username=username, always_allow=True))
+                db.session.add(Users(client_id=client_id, username=username, always_allow=True))
             else:
                 logger.debug(f'record to always allow {username}: {client} already exists, skipping creation')
 
@@ -2384,8 +2384,8 @@ class WebappTokenGen(Resource):
         tenant_id = g.request_tenant_id
         logger.debug(f"client_id: {client_id}; tenant_id: {tenant_id}")
         # get additional query parameters from request ---
-        # state = request.args.get("state")
-        state = None
+        state = request.args.get("state")
+        # state = None
         session_state = session.get("state")
         if not state == session_state:
             logger.error(

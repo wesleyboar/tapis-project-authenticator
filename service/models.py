@@ -650,7 +650,7 @@ class RefreshTokens(db.Model):
     # the last time this record was updated
     last_update_time = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
     
-class User(db.Model):
+class Users(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -943,7 +943,7 @@ def create_clients_for_tenant(tenant_id):
     """
     Create the OAuth clients for the Token Webapp for a specific tenant_id.
 
-    There are two clients that get created in each tenant:
+    There are three clients that get created in each tenant:
     one with a registered callback using the tenant's base_url and another
     with a "localhost" callback for running locally.
 
