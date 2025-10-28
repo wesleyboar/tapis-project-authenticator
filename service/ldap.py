@@ -405,6 +405,37 @@ def get_tenant_user(tenant_id, username):
         raise DAOError(msg)
     result = []
     logger.debug(f"conn.entries: {conn.entries}")
+    # Now we need to also check if the user is allowed in the tenant
+    # through the unix group filter.
+    unix_groups_supplemental_filter = custom_ldap_config.get(
+        'unix_groups_supplemental_filter'
+    )
+    logger.debug(
+        f"unix_groups_supplemental_filter from custom ldap config: {unix_groups_supplemental_filter}"
+    )
+    if unix_groups_supplemental_filter:
+        # Note: Kprice 10/28/2025:
+        # these two lines are specific to the tacc-all ldap. If we ever want to support
+        # other ldap configurations in the future, we will probably need to have a 
+        # tenant_groups_dn set in the tenant object and make it a requirement for
+        # filtering logins by group on that tenant. 
+        tenant_groups_dn = tenant_base_dn.replace('People', 'Groups')
+        group_search_filter = f"(&{unix_groups_supplemental_filter}(uniqueMember=uid={username},{tenant_base_dn}))"
+        logger.debug(
+            f"final custom group_search_filter: {group_search_filter}"
+        )
+        result = conn.search(f"{tenant_groups_dn}", group_search_filter, attributes=["*"])
+        if not result:
+            # it is possible to get a "success" result when there are no users in the OU -
+            if hasattr(conn.result, "description") and conn.result.description == "success":
+                return [], None
+            msg = f"Error retrieving user; debug information: {conn.result}"
+            logger.error(msg)
+            raise DAOError(msg)
+        logger.debug(result)
+        result = []
+        logger.debug(conn.entries)
+
     user = LdapUser.from_ldap3_entry(
         tenant_id, conn.entries[0].entry_attributes_as_dict
     )

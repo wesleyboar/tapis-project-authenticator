@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ### New features:
 - Added ability for a user to 'always allow' authorization for a client.
+- Added ability to filter login to tenant based on unix group. See issue #119
 
 ### Bug fixes:
 - None

@@ -2261,6 +2261,37 @@ def get_tokenapp_client(tenant_id=None):
         client_data = token_webapp_clients[f"local.{tenant_id}"]
     return client_data
 
+def logout():
+    """
+    Helper function to reset the session whenever a logout needs to occur.
+    """
+    session.pop("username", None)
+    session.pop("tenant_id", None)
+    session.pop("access_token", None)
+    session.pop("device_login", None)
+    session.pop("mfa_required", None)
+    session.pop("mfa_validated", None)
+    session.pop("state", None)
+    session.pop("idp_id", None)
+    session.pop("orig_client_id", None)
+    session.pop("orig_client_redirect_uri", None)
+    session.pop("orig_client_response_type", None)
+    session.pop("orig_client_state", None)
+
+
+def clear_orig_client_data():
+    session.pop("orig_client_id", None)
+    session.pop("orig_client_redirect_uri", None)
+    session.pop("orig_client_response_type", None)
+    session.pop("orig_client_state", None)
+
+
+def logout_from_webapp():
+    """
+    Helper function that just removes the Token Webapp's attributes from the session.
+    """
+    session.pop("access_token", None)
+
 
 class WebappTokenAndRedirect(Resource):
     """

@@ -18,7 +18,6 @@ depends_on = None
 
 
 def upgrade():
-    logger.info("Starting 25Q4 upgrade")
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('client_id', sa.String(length=80), nullable=False),
@@ -26,7 +25,6 @@ def upgrade():
     sa.Column('always_allow', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    logger.info("Ending 25Q4 upgrade")
 
 
 def downgrade():
