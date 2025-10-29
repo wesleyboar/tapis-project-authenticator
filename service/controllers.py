@@ -2387,12 +2387,12 @@ class WebappTokenGen(Resource):
         state = request.args.get("state")
         # state = None
         session_state = session.get("state")
-        if not state == session_state:
+        if session_state and not state == session_state:
             logger.error(
                 f"state received ({state}) did not match session state ({session_state})"
             )
             raise errors.ResourceError(
-                msg=f"Unauthorized access attempt: state mismatch."
+                msg="Unauthorized access attempt: state mismatch."
             )
         code = request.args.get("code")
         logger.debug(f'got code from request:: {code}')
