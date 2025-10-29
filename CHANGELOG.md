@@ -1,6 +1,30 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 25Q4
+### Breaking Changes:
+- Modified DB schema to allow for automatic client authorization. 
+
+### New features:
+- Added ability for a user to 'always allow' authorization for a client.
+- Added ability to filter login to tenant based on unix group. See issue #119
+
+### Bug fixes:
+- None
+
+
+## 1.9.1 - TBD
+### Breaking Changes:
+- None
+
+### New features:
+- None 
+
+### Bug fixes:
+- Fix a bug where authenticator allowed username with spaces which are usually ignored by most LDAP servers. This resulted
+  in the same user getting JWTs with different subjects depending on whether a space was included in the username. 
+  See issue #118.
+
 
 ## 1.9.0 - 2025-07-07
 ### Breaking Changes:
