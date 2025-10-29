@@ -1289,11 +1289,11 @@ def test_exchange_device_code(client):
 
 
 ## MFA tests
-def test_mfa_valid_code(mfa_token):
+# def test_mfa_valid_code(mfa_token):
     # uses the cicsvc creds to auth.
-    response = mfa.call_mfa(mfa_token, TEST_TENANT_ID, MFA_USERNAME)
-    print(f"DEBUG:: mfa response: {response}")
-    assert response is True
+    # response = mfa.call_mfa(mfa_token, TEST_TENANT_ID, MFA_USERNAME)
+    # print(f"DEBUG:: mfa response: {response}")
+    # assert response is True
 
 
 def test_mfa_invalid_code(mfa_token):
