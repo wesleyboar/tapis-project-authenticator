@@ -13,7 +13,7 @@ def clear_orig_client_data():
     session.pop("orig_client_redirect_uri", None)
     session.pop("orig_client_response_type", None)
     session.pop("orig_client_state", None)
-
+    session.pop("nonce", None)
 
 def logout_from_webapp():
     """

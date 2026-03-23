@@ -1018,7 +1018,7 @@ def test_get_profile(client, tapis_jwt):
 def test_authorization_code(client, init_db):
     # simulate the authorization approval -
     with client:
-        # use hte session_transaction to enable modification of the session object:
+        # use the session_transaction to enable modification of the session object:
         # cf., https://flask.palletsprojects.com/en/1.1.x/testing/#accessing-and-modifying-sessions
         with client.session_transaction() as sess:
             sess["username"] = TEST_USERNAME
@@ -1035,6 +1035,7 @@ def test_authorization_code(client, init_db):
             },
         )
         print(response)
+        print(f"DEBUG: got response string: {response.data.decode('utf-8')}")
         assert response.status_code == 302
         # note: response.data is a raw bytes object containing the full HTML returned from the page.
         # try this if you want to debug ===>  print(response.data)
