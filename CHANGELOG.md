@@ -1,6 +1,19 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 26Q1
+### Breaking Changes:
+- None
+
+### New features:
+- Add checkbox and styling for "always allow" button on webapp authentication flow
+- Add support for passthrough nonce for OIDC endpoints with additional/optional checks
+- Remove header logging for MFA flow
+
+### Bug fixes:
+- Create fix for CII tenant which had slightly disconnected auth flow
+
+
 ## 25Q4
 ### Breaking Changes:
 - Modified DB schema to allow for automatic client authorization. 

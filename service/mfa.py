@@ -55,7 +55,7 @@ def check_sms(tenant_id, username):
             if config:
                 jwt = get_privacy_idea_jwt(config)
                 headers = {"Authorization": jwt}
-                logger.debug(headers)
+                # logger.debug(headers)
                 data = {"serial": username}
                 res = requests.get(
                     f"{config['privacy_idea_url']}/token?serial={username}",

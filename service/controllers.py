@@ -1267,6 +1267,18 @@ class AuthorizeResource(Resource):
         # check if the grant type is supported by this tenant
         config = tenant_configs_cache.get_config(tenant_id)
         allowable_grant_types = json.loads(config.allowable_grant_types)
+
+        ## in case of oidc we save nonce to session for use later
+        nonce = (
+            request.args.get("nonce")
+            or request.form.get("nonce")
+            or request.cookies.get("nonce")
+            or session.get("nonce")
+        )
+        session["nonce"] = nonce  # Always write nonce to session, even if None or empty
+        if session["nonce"]:
+            logger.debug(f"inside of get auth - nonce derived: {nonce}, args: {request.args}, form: {request.form}, cookies: {request.cookies}")
+
         mfa_config = json.loads(config.mfa_config)
         user_code=request.args.get("user_code", None)
 
@@ -1382,6 +1394,7 @@ class AuthorizeResource(Resource):
             "client_state": client_state,
             "device_login": session.get("device_login", None),
             "user_code": user_code,
+            "nonce": nonce,
         }
 
         auto_approve = Users.query.filter_by(username=username, client_id=client_id).first()
@@ -1392,7 +1405,7 @@ class AuthorizeResource(Resource):
         logger.debug(f'Checking for auto approve ... ')
         if auto_approve and not is_device_flow:
             logger.debug(f'Found. Skipping authoriziation page.')
-            generate_authorization_code(tenant_id, username, client_id, client)
+            generate_authorization_code(tenant_id, username, client_id, client, nonce)
             auto_redirect = handle_response_type(
                 response_type,
                 allowable_grant_types,
@@ -1400,7 +1413,8 @@ class AuthorizeResource(Resource):
                 username,
                 client_id,
                 client,
-                client_state
+                client_state,
+                nonce=nonce
             )
             return auto_redirect
         logger.debug(f'Not found. Proceeding to authentication page')
@@ -1480,6 +1494,17 @@ class AuthorizeResource(Resource):
 
         if mfa_response:
             return mfa_response
+
+        ## in case of oidc we save nonce to session for use later
+        nonce = (
+            request.args.get("nonce")
+            or request.form.get("nonce")
+            or request.cookies.get("nonce")
+            or session.get("nonce")
+        )
+        session["nonce"] = nonce  # Always write nonce to session, even if None or empty
+        if session["nonce"]:
+            logger.debug(f"inside of get auth - nonce derived: {nonce}, args: {request.args}, form: {request.form}, cookies: {request.cookies}")
 
         # TODO - Move this to the handle_response_type function
         if client_response_type == "device_code":
@@ -1580,7 +1605,8 @@ class AuthorizeResource(Resource):
                 username,
                 client_id,
                 client,
-                state
+                state,
+                nonce=nonce
             )
 
 
@@ -1823,13 +1849,15 @@ def _handle_tokens_request(request, oidc=False):
             )
             username = db_code.username
             idp_id = db_code.tapis_idp_id
+            passthrough_nonce = getattr(db_code, "passthrough_nonce", None)
         elif grant_type == "device_code":
             username = db_code.username
             ttl = db_code.access_token_ttl
             idp_id = db_code.tapis_idp_id
+            passthrough_nonce = getattr(db_code, "passthrough_nonce", None)
 
             logger.debug(
-                f"USERNAME: {username}; TTL: {ttl}; idp_id: {db_code.tapis_idp_id}"
+                f"device_code; USERNAME: {username}; TTL: {ttl}; idp_id: {db_code.tapis_idp_id}; passthrough_nonce: {passthrough_nonce}"
             )
 
         elif grant_type == "refresh_token":
@@ -1900,12 +1928,18 @@ def _handle_tokens_request(request, oidc=False):
         if idp_id:
             content["claims"]["tapis/idp_id"] = idp_id
         if oidc:
+            logger.debug('Top of OIDC in handle_token_request - passthrough_nonce', passthrough_nonce)
             if client_id:
                 # bookstack for example requires aud to match client id
                 content["claims"]["aud"] = client_id
             content["claims"]["iat"] = int(time.time())
             content["claims"]["extravar"] = username
             content["claims"]["email"] = username
+            # Set passthrough_nonce from authorization code if available
+            if grant_type == "authorization_code" and passthrough_nonce:
+                content["claims"]["nonce"] = passthrough_nonce
+            else:
+                content["claims"]["nonce"] = ""
 
         # only generate a refresh token when OAuth client is passed
         if client_id and client_key:
@@ -2036,7 +2070,14 @@ def _handle_tokens_request(request, oidc=False):
             raise errors.ResourceError(f"{msg}")
 
         if oidc:
-            logger.info("Token endpoint with OIDC flag set.")
+            logger.info("inside of POST /v3/oauth2/tokens with OIDC flag set")
+            logger.debug(f"request headers: {request.headers}")
+            logger.debug(f"request form: {request.form}")
+            logger.debug(f"request json: {request.json}")
+            logger.debug(f"request data: {request.data}")
+            logger.debug(f"request args: {request.args}")
+            logger.debug(f"request content type: {request.content_type}")
+            logger.debug(f"request base url: {request.base_url}")
             response_json = {
                 "access_token": result["access_token"]["access_token"],
                 "expires_in": result["access_token"]["expires_in"],
@@ -2057,6 +2098,15 @@ class TokensResource(Resource):
 
 class OIDCTokensResource(Resource):
     def post(self):
+        ## print all of flask request to logs
+        logger.info("top of POST /v3/oauth2/tokens with OIDC flag set")
+        logger.debug(f"request headers: {request.headers}")
+        logger.debug(f"request form: {request.form}")
+        logger.debug(f"request json: {request.json}")
+        logger.debug(f"request data: {request.data}")
+        logger.debug(f"request args: {request.args}")
+        logger.debug(f"request content type: {request.content_type}")
+        logger.debug(f"request base url: {request.base_url}")
         return _handle_tokens_request(request, oidc=True)
 
 

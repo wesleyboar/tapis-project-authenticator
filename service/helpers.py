@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 DEFAULT_DEVICE_CODE_TOKEN_TTL = 30
 
 
-def generate_authorization_code(tenant_id, username, client_id, client):
+def generate_authorization_code(tenant_id, username, client_id, client, nonce=None):
     """
     Generates an authorization code and saves it to the database.
     """
@@ -25,6 +25,7 @@ def generate_authorization_code(tenant_id, username, client_id, client):
         redirect_url=client.callback_url,
         code=AuthorizationCode.generate_code(),
         expiry_time=AuthorizationCode.compute_expiry(),
+        passthrough_nonce=nonce,
     )
     try:
         db.session.add(authz_code)
@@ -39,7 +40,7 @@ def generate_authorization_code(tenant_id, username, client_id, client):
     return authz_code
 
 
-def handle_response_type(response_type, allowable_grant_types, tenant_id, username, client_id, client, state, **kwargs):
+def handle_response_type(response_type, allowable_grant_types, tenant_id, username, client_id, client, state, nonce=None, **kwargs):
     if response_type == "token":
         if "implicit" not in allowable_grant_types:
             raise errors.ResourceError(
@@ -91,8 +92,12 @@ def handle_response_type(response_type, allowable_grant_types, tenant_id, userna
                 f"tenant. Allowable grant types: {allowable_grant_types}"
             )
 
+        # create the authorization code for the client and handle nonce if needed.
+        if nonce:
+            logger.debug(f"inside of handle response - nonce found: {nonce}")
+
         authz_code = generate_authorization_code(
-            tenant_id, username, client_id, client
+            tenant_id, username, client_id, client, nonce=nonce
         )
 
         # Redirect to the client's callback URL with the authorization code
