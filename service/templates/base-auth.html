@@ -3,7 +3,7 @@
 {% block assets %}
 {{ super() }}
 
-{% with core_styles_cdn_url="https://unpkg.com/@tacc/core-styles@2.18.0" %}
+{% with core_styles_cdn_url="https://cdn.jsdelivr.net/npm/@tacc/core-styles@v2.30.1" %}
 <style>
   /* base styles */
   @import url('{{ core_styles_cdn_url }}/dist/core-styles.settings.css') layer(base);
@@ -43,15 +43,25 @@
 </template>
 <script type="module">
     const form = document.querySelector('form');
-    const submitButton = form.querySelector('[type="submit"]');
+    const submitButtons = form.querySelectorAll('[type="submit"]');
     const loadingTemplate = document.getElementById('loading-content');
     const loadingContent = loadingTemplate.content.cloneNode(true);
     const fields = form.querySelectorAll('input:not([hidden], select, textarea');
 
     form.addEventListener('submit', (event) => {
       /* To show user the submission is in progress */
-      submitButton.setAttribute('data-state', 'busy');
-      submitButton.append(...loadingContent.childNodes);
+      if (submitButtons.length === 1) {
+        const submitButton = submitButtons[0];
+
+        submitButton.setAttribute('data-state', 'busy');
+        submitButton.append(...loadingContent.childNodes);
+
+        /* To not disable buttons that have a value to submit */
+        /* FAQ: Or else value will not be submitted */
+        if ( ! submitButton.hasAttribute('value')) {
+          submitButton.setAttribute('disabled', '');
+        }
+      }
 
       /* To show user what was entered is what will be processed */
       [...fields].forEach(field => {

@@ -15,6 +15,9 @@
       <span>Log In</span>
     </h1>
     <p>to continue to the <var>{{ client_display_name }}</var></p>
+    {% if client_display_name == 'DesignSafe JupyterHub' %}
+      <p>Warning: Files saved in the top most directory will be wiped on server restart. Please save files to MyData or to a Project.</p>
+    {% endif %}
 
     {% if error %}
     <ul>
@@ -24,11 +27,11 @@
 
     <div class="has-required">
       <label for="username">Username</label>
-      <input id="username" type="text" name="username" required>
+      <input id="username" type="text" name="username" autofocus required autocomplete="username">
     </div>
     <div class="has-required">
       <label for="password">Password</label>
-      <input id="password" type="password" name="password" required>
+      <input id="password" type="password" name="password" required autocomplete="current-password">
     </div>
     <input type="hidden" name="client_id" value="{{ client_id }}">
     <input type="hidden" name="client_redirect_uri" value="{{ client_redirect_uri }}">
@@ -37,19 +40,25 @@
     <input type="hidden" name="client_response_type" value="{{ client_response_type }}">
     <footer>
       {% if tenant_id == 'apcd' %}
-      <a href="https://accounts.tacc.utexas.edu/apcd/register" rel="noreferrer" target="_blank">
-        {% else %}
+        <a href="https://accounts.tacc.utexas.edu/apcd/register" rel="noreferrer" target="_blank">
+      {% else %}
         <a href="https://accounts.tacc.utexas.edu/register" rel="noreferrer" target="_blank">
-          {% endif %}
-          Create Account
+      {% endif %}
+      Create Account
         </a>
         <button type="submit">Log In</button>
     </footer>
     <nav>
       <p>Having trouble?</p>
+      {% if tenant_id == 'apcd' %}
+      <a href="mailto:support@tickets.txapcd.org" rel="nonreferrer" target="_blank" >
+        For help, email support@tickets.txapcd.org
+      </a>
+      {% else %}
       <a href="https://tacc.utexas.edu/about/help/" rel="noreferrer" target="_blank">
         Account Help
       </a>
+      {% endif %}
     </nav>
   </form>
   {% include "./content_footer.html" %}

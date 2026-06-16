@@ -16,13 +16,21 @@
 {% endblock %}
 {% block head_extra %}
 <style>
-body {
+body, html {
   background-color: var(--global-color-primary--light);
 
   /* So body is as tall as page, thus sticky footer sticks to bottom of page */
   /* FAQ: Replaces base.html fixed footer because it has a disadvantage—
           it covers the login form on screens shorter than the form */
   min-height: 100vh;
+  min-width: 100vw;
+  max-width: 100vw;
+  max-height: 100vh;
+  overflow: auto;
+}
+#details td.token-cell {
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 </style>
 {% endblock %}
@@ -45,8 +53,8 @@ body {
    <table id="details" class="table table-striped">
       <thead>
           <tr>
-            <th>Token Details</th>
-            <th width="200px"> </th>
+            <th width="130rem">Token Details</th>
+            <th><a href="/v3/oauth2/logout">Logout</a></th>
           </tr>
       </thead>
       <tbody>
@@ -60,7 +68,7 @@ body {
           </tr>
           <tr>
               <td>Access Token</td>
-              <td>{{ token }}</td>
+              <td class="token-cell">{{ token }}</td>
           </tr>
       </tbody>
    </table>

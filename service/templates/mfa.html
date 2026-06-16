@@ -15,11 +15,9 @@
          <span>Enter MFA Token</span>
       </h1>
 
-      {% if tenant_id == "designsafe" %}
       <p>
-         Multi-Factor Authentication (MFA) is now required. <small><a href="https://docs.tacc.utexas.edu/basics/mfa/" target="_blank">Set up MFA</a> via the <span>TACC&nbsp;User&nbsp;Portal</span>.</small>
+         Multi-Factor Authentication (MFA) is now required. <br /><small><a href="https://docs.tacc.utexas.edu/basics/mfa/" target="_blank">Set up MFA</a> via the <span>TACC&nbsp;User&nbsp;Portal</span>.</small>
       <p>
-      {% endif %}
 
       {% if error %}
          <ul>
@@ -33,7 +31,7 @@
       </div>
       <div class="has-required">
          <label for="mfa_token">Token</label>
-         <input id="mfa_token" type="text" name="{{ mfa_token_name }}" placeholder="Enter MFA Token" required autocomplete="one-time-pass">
+         <input id="mfa_token" type="text" name="{{ mfa_token_name }}" placeholder="Enter MFA Token" autofocus autocomplete="one-time-pass">
          <input type="hidden" name="mfa_token_name" value="{{ mfa_token_name }}">
          <input type="hidden" name="client_id" value="{{ client_id }}">
          <input type="hidden" name="client_redirect_uri" value="{{ client_redirect_uri }}">
@@ -44,7 +42,9 @@
          <input type="hidden" name="user_code" value="{{ user_code }}">
       </div>
       <footer>
-         <button type="submit">Submit</button>
+         <button type="submit" name="action" style="display: none;" aria-hidden="true" value="submit">Submit (Hidden)</button>
+         <button type="submit" name="action" value="logout">Logout</button>
+         <button type="submit" name="action" value="submit">Submit</button>
       </footer>
    </form>
   {% include "./content_footer.html" %}

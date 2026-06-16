@@ -9,7 +9,7 @@ from service.controllers import AuthorizeResource, ClientsResource, ClientResour
     ProfilesResource, ProfileResource, StaticFilesResource, LoginResource, SetTenantResource, LogoutResource, \
     WebappTokenGen, WebappTokenAndRedirect, TenantConfigResource, UserInfoResource, OAuth2ProviderExtCallback, \
     OAuthMetadataResource, MFAResource, DeviceFlowResource, DeviceCodeResource, V2TokenResource, \
-    RevokeTokensResource, SetIdentityProvider, WebappLogout
+    RevokeTokensResource, SetIdentityProvider, WebappLogout, OIDCjwksResource, OIDCTokensResource, OIDCUserInfoResource #, OIDCMetadataResource
 from service.ldap import populate_test_ldap
 from service.models import db, app, initialize_tenant_configs
 
@@ -74,6 +74,12 @@ api.add_resource(TokensResource, '/v3/oauth2/tokens')
 api.add_resource(UserInfoResource, '/v3/oauth2/userinfo')
 api.add_resource(ProfilesResource, '/v3/oauth2/profiles')
 api.add_resource(ProfileResource, '/v3/oauth2/profiles/<username>')
+
+# API OIDC resources
+#api.add_resource(OIDCMetadataResource, '/v3/oauth2/.well-known/openid-configuration')
+api.add_resource(OIDCjwksResource, '/v3/oauth2/jwks')
+api.add_resource(OIDCTokensResource, '/v3/oauth2/tokens/oidc')
+api.add_resource(OIDCUserInfoResource, '/v3/oauth2/userinfo/oidc')
 
 # Auth server resources
 api.add_resource(AuthorizeResource, '/v3/oauth2/authorize')

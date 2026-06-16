@@ -103,3 +103,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# defualt config
+config-local.json
+
+# MacOS
+*.DS_Store

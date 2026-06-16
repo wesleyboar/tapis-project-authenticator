@@ -1,14 +1,14 @@
-from tapisservice import errors
-from tapisservice.config import conf
-from tapisservice.tapisflask import utils
 import json
 import time
-import requests
-from service.models import TenantConfig, tenant_configs_cache
 
+import requests
+from tapisservice.config import conf
 from tapisservice.logs import get_logger
 
+from service.models import tenant_configs_cache
+
 logger = get_logger(__name__)
+
 
 def needs_mfa(tenant_id, mfa_timestamp=None):
     if conf.turn_off_mfa:
@@ -18,28 +18,82 @@ def needs_mfa(tenant_id, mfa_timestamp=None):
     try:
         mfa_config = json.loads(tenant_config.mfa_config)
         expired = check_mfa_expired(mfa_config, mfa_timestamp)
-    except Exception as e:
+    except Exception:
         return False
 
-    # mfa_config is a JSON object; if the tenant is not configured for MFA, then 
+    # mfa_config is a JSON object; if the tenant is not configured for MFA, then
     # the mfa_config object will be an empty dict (i.e., {})
     if mfa_config and not expired:
         return True
     return False
-    
+
 
 def check_mfa_expired(mfa_config, mfa_timestamp=None):
     """
-    Based on the tenant's MFA config and an optional MFA timestamp corresponding to the 
+    Based on the tenant's MFA config and an optional MFA timestamp corresponding to the
     last time an MFA was completed, determine whether the MFA session should be expired.
     """
     if mfa_timestamp is not None:
         if "tacc" in mfa_config:
-            if 'expire' in mfa_config['tacc']:
+            if "expire" in mfa_config["tacc"]:
                 current_time = time.time()
-                if current_time - mfa_timestamp > int(mfa_config['tacc']['expiry_frequency']):
+                if current_time - mfa_timestamp > int(
+                    mfa_config["tacc"]["expiry_frequency"]
+                ):
                     return True
     return False
+
+
+def check_sms(tenant_id, username):
+    tenant_config = tenant_configs_cache.get_config(tenant_id)
+
+    try:
+        mfa_config = json.loads(tenant_config.mfa_config)
+        if "tacc" in mfa_config:
+            config = get_config_data(mfa_config)
+
+            if config:
+                jwt = get_privacy_idea_jwt(config)
+                headers = {"Authorization": jwt}
+                # logger.debug(headers)
+                data = {"serial": username}
+                res = requests.get(
+                    f"{config['privacy_idea_url']}/token?serial={username}",
+                    headers=headers,
+                    data=data,
+                )
+                result = res.json()["result"]
+                logger.debug(
+                    f"Serial request from Privacy Idea for {username}: {result}"
+                )
+                return res.json()["result"]["value"]["tokens"][0]["tokentype"] == "sms"
+    except Exception as e:
+        logger.debug(f"Error checking SMS for {username}: {e}")
+
+    return False
+
+
+def send_sms(tenant_id, username):
+    tenant_config = tenant_configs_cache.get_config(tenant_id)
+
+    try:
+        mfa_config = json.loads(tenant_config.mfa_config)
+        if "tacc" in mfa_config:
+            config = get_config_data(mfa_config)
+
+            if config:
+                jwt = get_privacy_idea_jwt(config)
+                headers = {"Authorization": jwt}
+                logger.debug(headers)
+                data = {"serial": username}
+                res = requests.post(
+                    f"{config['privacy_idea_url']}/validate/triggerchallenge",
+                    headers=headers,
+                    data=data,
+                )
+                return res.status_code == 200
+    except Exception as e:
+        logger.debug(f"Error sending SMS to {username}: {e}")
 
 
 def call_mfa(token, tenant_id, username):
@@ -51,57 +105,106 @@ def call_mfa(token, tenant_id, username):
         return e
 
     if not mfa_config:
-        return ''
+        return ""
 
     if "tacc" in mfa_config:
-        return privacy_idea_tacc(mfa_config, token, username)
+        config = get_config_data(mfa_config)
+        jwt = get_privacy_idea_jwt(config)
+        return verify_mfa_token(
+            config["privacy_idea_url"], jwt, token, username, config["realm"]
+        )
 
-def privacy_idea_tacc(config, token, username):
-    if not config:
-        return False
-    
-    if config:
-        privacy_idea_url = config['tacc']['privacy_idea_url']
-        privacy_idea_client_id = config['tacc']['privacy_idea_client_id']
-        privacy_idea_client_key = config['tacc']['privacy_idea_client_key']
-        grant_types = config['tacc'].get('grant_types', '')
-        realm = config['tacc'].get('realm', 'tacc')
 
-        jwt = get_privacy_idea_jwt(privacy_idea_url, privacy_idea_client_id, privacy_idea_client_key)
+def get_config_data(config):
+    data = {}
+    data["privacy_idea_url"] = config["tacc"].get("privacy_idea_url", None)
+    data["privacy_idea_client_id"] = config["tacc"].get("privacy_idea_client_id", None)
+    data["privacy_idea_client_key"] = config["tacc"].get(
+        "privacy_idea_client_key", None
+    )
+    data["privacy_idea_jwt"] = config["tacc"].get("privacy_idea_jwt", None)
+    data["grant_types"] = config["tacc"].get("grant_types", "")
+    data["realm"] = config["tacc"].get("realm", "tacc")
 
-        if not jwt:
-            return False
-         
-        return verify_mfa_token(privacy_idea_url, jwt, token, username, realm)
+    return data
 
-def get_privacy_idea_jwt(url, username, password):
+
+def get_privacy_idea_jwt(config):
+    jwt = config.get("privacy_idea_jwt", None)
+    if jwt:
+        return jwt
     data = {
-        "username": username,
-        "password": password
+        "username": config["privacy_idea_client_id"],
+        "password": config["privacy_idea_client_key"],
     }
-    url = f"{url}/auth"
-    try:
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-    except Exception as e:
-        return
-    jwt = response.json()['result']['value']['token']
+    if config["privacy_idea_url"] and data["username"] and data["password"]:
+        try:
+            url = f"{config['privacy_idea_url']}/auth"
+            response = requests.post(url, json=data)
+            response.raise_for_status()
+
+            jwt = response.json()["result"]["value"]["token"]
+        except Exception as e:
+            logger.debug(f"Error generating jwt: {e}")
+
     return jwt
+
 
 def verify_mfa_token(url, jwt, token, username, realm):
     url = f"{url}/validate/check"
-    data = {
-        "user": username,
-        "realm": realm,
-        "pass": token
-    }
-    headers = {
-        "x-tapis-token": jwt
-    }
+    data = {"user": username, "realm": realm, "pass": token}
+    headers = {"x-tapis-token": jwt}
     try:
         response = requests.post(url, data=data, headers=headers)
         response.raise_for_status()
-    except Exception as e:
+    except Exception:
         return False
-    valid = response.json()['result']['value']
+    valid = response.json()["result"]["value"]
     return valid
+
+
+def check_and_redirect_mfa(
+    mfa_config,
+    client_id,
+    client_redirect_uri,
+    client_state,
+    response_type,
+    user_code,
+):
+    """
+    Checks MFA status and redirects to the MFA endpoint if
+    validation is required or expired.
+
+    :param mfa_config: The MFA configuration object.
+    :param client_id: The OAuth client ID.
+    :param client_redirect_uri: The OAuth client redirect URI.
+    :param client_state: The OAuth client state.
+    :param response_type: The OAuth response type.
+    :param user_code: The user code.
+    :param session: The Flask session object.
+
+    :return: A redirect response if MFA is required, otherwise None.
+    """
+    from flask import session, redirect, url_for
+
+    if mfa_config:
+        if session.get("mfa_required"):
+            if check_mfa_expired(mfa_config, session.get("mfa_timestamp", None)):
+                session["mfa_validated"] = False
+
+            if not session.get("mfa_validated"):
+                logger.debug("Authorize Resource: Redirecting to MFA")
+
+                return redirect(
+                    url_for(
+                        "mfaresource",
+                        client_id=client_id,
+                        redirect_uri=client_redirect_uri,
+                        state=client_state,
+                        response_type=response_type,
+                        user_code=user_code,
+                        source="authorize",
+                    )
+                )
+
+    return None
