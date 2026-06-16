@@ -848,8 +848,8 @@ class LoginResource(Resource):
             check_username_password(
                 tenant_id=tenant_id, username=username, password=password
             )
-        except InvalidPasswordError:
-            context["error"] = "Invalid username/password combination."
+        except InvalidPasswordError as e:
+            context["error"] = str(e)
             return make_response(render_template("login.html", **context), 200, headers)
         # the username and password were accepted; set the session and redirect to the authorization page.
         # first, check if this is a multi_idp situation
@@ -1819,8 +1819,8 @@ def _handle_tokens_request(request, oidc=False):
                 )
             try:
                 check_username_password(tenant_id, username, password)
-            except InvalidPasswordError:
-                msg = "Invalid username/password combination."
+            except InvalidPasswordError as e:
+                msg = str(e)
                 logger.debug(msg)
                 raise errors.ResourceError(msg)
         elif grant_type == "authorization_code":
