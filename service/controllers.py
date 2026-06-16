@@ -51,7 +51,16 @@ from service.models import (
 )
 from service.ldap import list_tenant_users, get_tenant_user, check_username_password
 from service.oauth2ext import OAuth2ProviderExtension
-from service.mfa import needs_mfa, call_mfa, check_mfa_expired, check_sms, send_sms, check_and_redirect_mfa
+from service.mfa import (
+    needs_mfa,
+    call_mfa,
+    check_mfa_expired,
+    check_sms,
+    send_sms,
+    check_and_redirect_mfa,
+    user_has_mfa_token,
+    MFA_NOT_ENROLLED_MESSAGE,
+)
 
 
 # get the logger instance -
@@ -1032,10 +1041,25 @@ class MFAResource(Resource):
                 )
             )
         else:
+            enrolled = user_has_mfa_token(tenant_id, username)
+            if enrolled is False:
+                response = MFA_NOT_ENROLLED_MESSAGE
+            display_name = ""
+            try:
+                display_name = client.display_name
+            except Exception as e:
+                logger.debug(f"Error getting client display name. e: {e}")
             context = {
                 "error": response,
-                "username": session.get("username"),
+                "client_display_name": display_name,
+                "client_id": client_id,
+                "client_redirect_uri": client_redirect_uri,
+                "client_state": client_state,
+                "tenant_id": tenant_id,
                 "mfa_token_name": self.create_token(),
+                "username": session.get("username"),
+                "user_code": user_code,
+                "source": source,
             }
             return make_response(render_template("mfa.html", **context), 200, headers)
 
