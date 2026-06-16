@@ -1,6 +1,114 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 26Q1
+### Breaking Changes:
+- None
+
+### New features:
+- Add checkbox and styling for "always allow" button on webapp authentication flow
+- Add support for passthrough nonce for OIDC endpoints with additional/optional checks
+- Remove header logging for MFA flow
+
+### Bug fixes:
+- Create fix for CII tenant which had slightly disconnected auth flow
+
+
+## 25Q4
+### Breaking Changes:
+- Modified DB schema to allow for automatic client authorization. 
+
+### New features:
+- Added ability for a user to 'always allow' authorization for a client.
+- Added ability to filter login to tenant based on unix group. See issue #119
+
+### Bug fixes:
+- None
+
+
+## 1.9.1 - TBD
+### Breaking Changes:
+- None
+
+### New features:
+- None 
+
+### Bug fixes:
+- Fix a bug where authenticator allowed username with spaces which are usually ignored by most LDAP servers. This resulted
+  in the same user getting JWTs with different subjects depending on whether a space was included in the username. 
+  See issue #118.
+
+
+## 1.9.0 - 2025-07-07
+### Breaking Changes:
+- None
+
+### New features:
+- Implements the redirect_url for logout
+
+### Bug Fixes:
+- Linting
+- Compatability with older docker compose versions
+
+
+## 1.8.4 - 2025-05-30
+### Breaking Changes:
+- None
+
+### New features:
+- Users with SMS configured for MFA will now be able to use SMS via a Tapis OAuth flow.
+
+### Bug Fixes:
+- None 
+
+
+## 1.8.3 - 2025-04-14
+### Breaking Changes:
+- None
+
+### New features:
+- None 
+
+### Bug Fixes:
+- Fix to user info endpoint.
+- Fixed use of OpenAPI v3 spec servers stanza. Tapisservice adds facility to ignore or change expected validated field.
+
+
+## 1.8.2 - 2025-02-28
+### Breaking Changes:
+- None
+
+### New features:
+- 100% tests coverage aside from V2 endpoints
+- Now grabbing uid from tokens if DN not set by CN for tenant
+- Introduced OIDC support with jwks endpoints and dedicated oidc response endpoints.
+- Now works better with Jenkins
+
+### Bug Fixes:
+- None
+
+
+## 1.8.0 - 2024-12-04
+### Breaking Changes:
+- None
+
+### New features:
+- Change help message per tenant
+
+### Bug Fixes:
+- Release for 1.8.0
+
+
+## 1.7.0 - 2024-09-13
+### Breaking Changes:
+- None
+
+### New features:
+- None
+
+### Bug Fixes:
+- Release for 1.7.0
+
 
 ## 1.6.3 - 2024-08-28
 ### Breaking Changes:

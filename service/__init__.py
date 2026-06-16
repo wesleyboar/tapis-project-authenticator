@@ -19,7 +19,7 @@ MIGRATIONS_RUNNING = os.environ.get('MIGRATIONS_RUNNING', False)
 logger.debug("creating the authenticator tapis service client...")
 t = get_service_tapis_client(tenants=auth_tenants, 
                              # todo -- change back once tokens api update is in prod
-                             resource_set='dev'
+                             # resource_set='dev'
                             )
 
 

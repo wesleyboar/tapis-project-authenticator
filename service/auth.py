@@ -60,6 +60,7 @@ def authentication():
         raise common_errors.ResourceError("The endpoint and HTTP method combination "
                                           "are not available from this service.")
 
+
     # the metadata endpoint is publicly available
     if '/v3/oauth2/.well-known/' in request.url_rule.rule:
         logger.debug(".well-known endpoint; request is allowed to be made unauthenticated.")
@@ -82,7 +83,7 @@ def authentication():
         # first, make sure this request is for a tenant served by this authenticator
         if g.request_tenant_id not in conf.tenants:
             raise common_errors.PermissionsError(f"The request is for a tenant ({g.request_tenant_id}) that is not "
-                                                 f"served by this authenticator.")
+                                                f"served by this authenticator.")
         # we only want to honor tokens from THIS authenticator; i.e., not some other authenticator. therefore, we need
         # to check that the tenant_id associated with the token (g.tenant_id) is the same as THIS authenticator's tenant
         # id;
@@ -91,28 +92,28 @@ def authentication():
                         f"and tenant was {conf.service_tenant_id}")
             return True
         logger.debug(f"request token does not represent THIS authenticator: token username: {g.username};"
-                     f" request tenant: {g.tenant_id}. Now checking for tenant admin...")
+                    f" request tenant: {g.tenant_id}. Now checking for tenant admin...")
         # all other service accounts are not allowed to update authenticator
         if g.account_type == 'service':
             raise common_errors.PermissionsError("Not authorized -- service accounts are not allowed to access the"
-                                                 "authenticator admin endpoints.")
+                                                "authenticator admin endpoints.")
         # sanity check -- the request tenant id should be the same as the token tenant id in the remaining cases because
         # they are all user tokens
         if not g.request_tenant_id == g.tenant_id:
             logger.error(f"program error -- g.request_tenant_id: {g.request_tenant_id} not equal to "
-                         f"g.tenant_id: {g.tenant_id} even though account type was user!")
+                        f"g.tenant_id: {g.tenant_id} even though account type was user!")
             raise common_errors.ServiceConfigError(f"Unexpected program error checking permissions. The tenant id of"
-                                                   f"the request ({g.request_tenant_id})  did not match the tenant id "
-                                                   f"of the access token ({g.tenant_id}). Please contact server "
-                                                   f"administrators.")
+                                                f"the request ({g.request_tenant_id})  did not match the tenant id "
+                                                f"of the access token ({g.tenant_id}). Please contact server "
+                                                f"administrators.")
         # check SK for tenant admin --
         try:
             rsp = t.sk.isAdmin(tenant=g.tenant_id, user=g.username)
         except Exception as e:
             logger.error(f"Got exception trying to check tenant admin role for tenant: {g.tenant_id} "
-                         f"and user: {g.username}; exception: {e}")
+                        f"and user: {g.username}; exception: {e}")
             raise common_errors.PermissionsError("Could not check tenant admin role with SK; this role is required for "
-                                                 "accessing the authenticator admin endpoints.")
+                                                "accessing the authenticator admin endpoints.")
         try:
             if rsp.isAuthorized:
                 logger.info(f"user {g.username} had tenant admin role for tenant {g.tenant_id}; allowing request.")
@@ -121,14 +122,14 @@ def authentication():
                 logger.info(f"user {g.username} DID NOT have tenant admin role for tenant {g.tenant_id}; "
                             f"NOT allowing request.")
                 raise common_errors.PermissionsError("Permission denied -- Tenant admin role required for accessing "
-                                                     "the authenticator admin endpoints.")
+                                                    "the authenticator admin endpoints.")
         except Exception as e:
             logger.error(f"got exception trying to check isAuthorized property from isAdmin() call to SK."
-                         f"username: {g.username}; tenant: {g.tenant_id}; rsp: {rsp}; e: {e}")
+                        f"username: {g.username}; tenant: {g.tenant_id}; rsp: {rsp}; e: {e}")
             logger.info(f"user {g.username} DID NOT have tenant admin role for tenant {g.tenant_id}; "
                         f"NOT allowing request.")
             raise common_errors.PermissionsError("Permission denied -- Tenant admin role required for accessing the "
-                                                 "authenticator admin endpoints.")
+                                                "authenticator admin endpoints.")
 
     # no credentials required on the authorize, login and oa2 extension pages
     if '/v3/oauth2/authorize' in request.url_rule.rule or '/v3/oauth2/login' in request.url_rule.rule \
@@ -144,7 +145,49 @@ def authentication():
         # make sure this request is for a tenant served by this authenticator
         if g.request_tenant_id not in conf.tenants:
             raise common_errors.PermissionsError(f"The request is for a tenant ({g.request_tenant_id}) that is not "
+                                                f"served by this authenticator.")
+        return True
+
+    # token should come from `Authorization: Bearer $token` header. rather than x-tapis-token
+    # this endpoint takes both, converts Authorization to x-tapis-token for simplicity
+    if '/v3/oauth2/userinfo/oidc' in request.url_rule.rule:
+        logger.debug(f"top of /v3/oauth2/userinfo/oidc auth: request.headers: {request.headers}")
+
+        auth_token = request.headers.get('Authorization')
+        if auth_token and auth_token.startswith('Bearer ') and not request.headers.get('X-Tapis-Token'):
+            try:
+                # overwrite the headers via wsgi environ. request.headers itself is read-only
+                tapis_token = auth_token.replace('Bearer ', '')
+                logger.debug(f"found auth header; setting environ X-Tapis-Token to {tapis_token}")
+                # modify the WSGI environment directly
+                # wsgi requires headers be uppercase, no dashes, and prefixed with 'HTTP_'
+                request.environ['HTTP_X_TAPIS_TOKEN'] = tapis_token
+            except Exception as e:
+                logger.error(f"found auth header, but failed to parse it; exception: {e}")
+
+        # debug logs
+        try:
+            headers = request.headers
+            logger.debug(f"before auth.authentication(). request.headers: {headers.keys()}")
+        except Exception as e:
+            pass
+
+        # tokens might have aud, if jwt.decode in tapisservice doesn't specify expected aud you'll
+        # get invalid aud. Either we can somehow pop aud or specify to jwt.decode(options={'verify_aud': False})
+        # Instead of verify = false we can also specify a list of valid auds. Pop aud would require
+        # re-encoding+signing key. We don't have private tenant key in auth though. Ignoring for now, only
+        # bookstack looks for this when running their auth.
+        # resolve_tenant_id_for_request decode needs aud to expect - https://github.com/jpadilla/pyjwt/blob/master/docs/usage.rst#audience-claim-aud
+        # Edit, expected_aud now exists. Bookstack asks for aud == client_id. For now we'll just allow any aud, especially as this is one endpoint.
+
+        auth.authentication(expected_aud=["*"])
+        # always resolve the request tenant id based on the URL:
+        auth.resolve_tenant_id_for_request()
+        # make sure this request is for a tenant served by this authenticator
+        if g.request_tenant_id not in conf.tenants:
+            raise common_errors.PermissionsError(f"The request is for a tenant ({g.request_tenant_id}) that is not "
                                                  f"served by this authenticator.")
+        logger.debug(f"End of v3/oauth2/userinfo/oidc auth: final request_tenant_id: {g.request_tenant_id}")
         return True
 
     # the profiles endpoints always use standard Tapis Token auth -
@@ -156,7 +199,7 @@ def authentication():
         # make sure this request is for a tenant served by this authenticator
         if g.request_tenant_id not in conf.tenants:
             raise common_errors.PermissionsError(f"The request is for a tenant ({g.request_tenant_id}) that is not "
-                                                 f"served by this authenticator.")
+                                                f"served by this authenticator.")
         return True
 
     # the clients endpoints need to accept both standard Tapis Token auth and basic auth,
@@ -244,7 +287,7 @@ def authentication():
         # make sure this request is for a tenant served by this authenticator
         if g.request_tenant_id not in conf.tenants:
             raise common_errors.PermissionsError(f"The request is for a tenant ({g.request_tenant_id}) that is not "
-                                                 f"served by this authenticator.")
+                                                f"served by this authenticator.")
         return True
 
     # Special v3->v2 token generation endpoint.
