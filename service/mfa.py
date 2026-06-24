@@ -73,42 +73,6 @@ def check_sms(tenant_id, username):
     return False
 
 
-def user_has_mfa_token(tenant_id, username):
-    """
-    Return True if PrivacyIdea reports at least one token for the user,
-    False if the user has no tokens, or None if enrollment cannot be determined.
-    """
-    tenant_config = tenant_configs_cache.get_config(tenant_id)
-
-    try:
-        mfa_config = json.loads(tenant_config.mfa_config)
-        if "tacc" not in mfa_config:
-            return None
-        config = get_config_data(mfa_config)
-        if not config:
-            return None
-        jwt = get_privacy_idea_jwt(config)
-        if not jwt:
-            return None
-        headers = {"Authorization": jwt}
-        res = requests.get(
-            f"{config['privacy_idea_url']}/token?serial={username}",
-            headers=headers,
-        )
-        res.raise_for_status()
-        tokens = res.json()["result"]["value"].get("tokens", [])
-        return len(tokens) > 0
-    except Exception as e:
-        logger.debug(f"Error checking MFA enrollment for {username}: {e}")
-
-    return None
-
-
-MFA_NOT_ENROLLED_MESSAGE = (
-    "No MFA token is enrolled. Set up MFA via the TACC User Portal."
-)
-
-
 def send_sms(tenant_id, username):
     tenant_config = tenant_configs_cache.get_config(tenant_id)
 
