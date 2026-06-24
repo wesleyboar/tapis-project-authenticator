@@ -33,7 +33,6 @@ from tapisservice.auth import validate_token, insecure_decode_jwt_to_claims
 
 from service import t
 from service.errors import InvalidPasswordError
-from service.login_messages import INVALID_USERNAME_PASSWORD_MESSAGE
 from service.helpers import handle_response_type, generate_authorization_code
 from service.session import logout, clear_orig_client_data, logout_from_webapp
 from service.models import (
@@ -858,8 +857,8 @@ class LoginResource(Resource):
             check_username_password(
                 tenant_id=tenant_id, username=username, password=password
             )
-        except InvalidPasswordError:
-            context["error"] = INVALID_USERNAME_PASSWORD_MESSAGE
+        except InvalidPasswordError as e:
+            context["error"] = str(e)
             return make_response(render_template("login.html", **context), 200, headers)
         # the username and password were accepted; set the session and redirect to the authorization page.
         # first, check if this is a multi_idp situation
@@ -1844,9 +1843,10 @@ def _handle_tokens_request(request, oidc=False):
                 )
             try:
                 check_username_password(tenant_id, username, password)
-            except InvalidPasswordError:
-                logger.debug(INVALID_USERNAME_PASSWORD_MESSAGE)
-                raise errors.ResourceError(INVALID_USERNAME_PASSWORD_MESSAGE)
+            except InvalidPasswordError as e:
+                msg = str(e)
+                logger.debug(msg)
+                raise errors.ResourceError(msg)
         elif grant_type == "authorization_code":
             # check the redirect uri -
             redirect_uri = data.get("redirect_uri")
