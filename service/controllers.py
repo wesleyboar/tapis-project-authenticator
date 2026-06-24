@@ -58,8 +58,6 @@ from service.mfa import (
     check_sms,
     send_sms,
     check_and_redirect_mfa,
-    user_has_mfa_token,
-    MFA_NOT_ENROLLED_MESSAGE,
 )
 
 
@@ -1041,9 +1039,6 @@ class MFAResource(Resource):
                 )
             )
         else:
-            enrolled = user_has_mfa_token(tenant_id, username)
-            if enrolled is False:
-                response = MFA_NOT_ENROLLED_MESSAGE
             display_name = ""
             try:
                 display_name = client.display_name
