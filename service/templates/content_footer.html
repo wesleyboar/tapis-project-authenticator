@@ -11,8 +11,7 @@
   <a href="https://tacc.utexas.edu/use-tacc/user-policies/">
     Policies
   </a>
-  {% set client_display_name_lower = (client_display_name or '') | lower %}
-  {% if 'tup' in client_display_name_lower or 'tacc user portal' in client_display_name_lower %}
+  {% if client_display_name == "TACC User Portal" %}
   <a href="https://tapis-project.org" target="_blank" class="powered_by">
     Powered by:
     <img src="https://dev.develop.tapis.io/v3/oauth2/authorize/tapis.png"
