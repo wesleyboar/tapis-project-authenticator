@@ -40,7 +40,10 @@
   {% elif tenant_id == "tacc" %}
     <img src="authorize/tacc-formal.svg" alt="TACC">
   {% else %}
+    {% set client_display_name_lower = (client_display_name or '') | lower %}
+    {% if 'tup' not in client_display_name_lower and 'tacc user portal' not in client_display_name_lower %}
     <img src="authorize/tapis.png" alt="Tapis">
+    {% endif %}
   {% endif %}
 
 {% endif %}
