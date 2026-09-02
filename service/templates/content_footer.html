@@ -1,3 +1,9 @@
+<style>
+  .powered_by {
+    /* To move non-image links to the left */
+    margin-left: auto;
+  }
+</style>
 <footer>
   <a href="https://tacc.utexas.edu/about/security-and-compliance/">
     Security
@@ -11,13 +17,3 @@
       alt="Tapis logo" title="Tapis (TACC APIs)" height="50px">
   </a>
 </footer>
-
-{% block head_extra %}
-{{ super() }}
-<style>
-  /* To move non-image links to the left */
-  .powered_by {
-    margin-left: auto;
-  }
-</style>
-{% endblock %}
