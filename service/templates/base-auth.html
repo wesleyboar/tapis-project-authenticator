@@ -27,6 +27,11 @@
 {% endblock %}
 
 {% block head_extra %}
+<script>
+  if (window.parent !== window) {
+    document.documentElement.classList.add('is-embedded');
+  }
+</script>
 <style>
   body {
     background-color: var(--global-color-primary--light);
@@ -35,6 +40,15 @@
     /* FAQ: Replaces base.html fixed footer because it has a disadvantage—
           it covers the login form on screens shorter than the form */
     min-height: 100vh;
+  }
+
+  html.is-embedded body {
+    min-height: auto;
+  }
+
+  html.is-embedded footer.s-footer,
+  html.is-embedded footer.auth-page-footer {
+    display: none;
   }
 </style>
 <template id="loading-content">
