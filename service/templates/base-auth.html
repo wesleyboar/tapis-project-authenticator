@@ -54,73 +54,70 @@
   <span class="sr-only" role="status">Loading...</span>
   <span class="spinner-border" aria-hidden="true"></span>
 </template>
-<script>
-  (function () {
+<script type="module">
     const form = document.querySelector('form');
-    if (!form) {
-      return;
-    }
-
     const submitButtons = form.querySelectorAll('[type="submit"]');
     const loadingTemplate = document.getElementById('loading-content');
     const loadingContent = loadingTemplate.content.cloneNode(true);
     const fields = form.querySelectorAll('input:not([hidden], select, textarea');
 
-    form.addEventListener('submit', () => {
+    form.addEventListener('submit', (event) => {
+      /* To show user the submission is in progress */
       if (submitButtons.length === 1) {
         const submitButton = submitButtons[0];
 
         submitButton.setAttribute('data-state', 'busy');
         submitButton.append(...loadingContent.childNodes);
 
-        if (!submitButton.hasAttribute('value')) {
+        /* To not disable buttons that have a value to submit */
+        /* FAQ: Or else value will not be submitted */
+        if ( ! submitButton.hasAttribute('value')) {
           submitButton.setAttribute('disabled', '');
         }
       }
 
-      [...fields].forEach((field) => {
+      /* To show user what was entered is what will be processed */
+      [...fields].forEach(field => {
         field.setAttribute('readonly', '');
       });
     });
-  })();
 </script>
-<script>
-  (function () {
-    if (window.parent === window) {
-      return;
-    }
+<script type="module">
+  function debounce(fn, delay = 50) {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => fn(...args), delay);
+    };
+  }
 
+  if (window.parent !== window) {
     const redirectUri = document.querySelector('input[name="client_redirect_uri"]')?.value;
-    if (!redirectUri) {
-      return;
-    }
+    if (redirectUri) {
+      try {
+        const parentOrigin = new URL(redirectUri).origin;
 
-    let parentOrigin;
-    try {
-      parentOrigin = new URL(redirectUri).origin;
-    } catch (e) {
-      return;
-    }
+        function postIframeHeight(type) {
+          parent.postMessage(
+            { type, height: document.documentElement.scrollHeight },
+            parentOrigin
+          );
+        }
 
-    function postHeight(type) {
-      parent.postMessage(
-        { type, height: document.documentElement.scrollHeight },
-        parentOrigin
-      );
-    }
+        const postLoaded = debounce(() => postIframeHeight('IFrameLoaded'));
 
-    function postLoaded() {
-      postHeight('IFrameLoaded');
-    }
+        postIframeHeight('IFrameInit');
+        window.addEventListener('load', postLoaded);
+        window.addEventListener('resize', postLoaded);
 
-    postHeight('IFrameInit');
-    window.addEventListener('load', postLoaded);
-    window.addEventListener('resize', postLoaded);
-
-    if (document.body) {
-      new ResizeObserver(postLoaded).observe(document.body);
+        if (document.body) {
+          new ResizeObserver(postLoaded).observe(document.body);
+        }
+      } catch (e) {
+        /* invalid client_redirect_uri */
+      }
     }
-  })();
+  }
 </script>
 {% endblock %}
 
