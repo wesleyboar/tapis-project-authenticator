@@ -46,8 +46,9 @@
     min-height: auto;
   }
 
+  /* Page chrome below the form (Security / Policies), not the form’s own <footer>. */
   html.is-embedded footer.s-footer,
-  html.is-embedded footer.auth-page-footer {
+  html.is-embedded main.s-form-page > footer {
     display: none;
   }
 </style>
