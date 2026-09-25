@@ -38,14 +38,14 @@
 
     /* So body is as tall as page, thus sticky footer sticks to bottom of page */
     /* FAQ: Replaces base.html fixed footer because it has a disadvantage—
-          it covers the login form on screens shorter than the form */
+            it covers the login form on screens shorter than the form */
     min-height: 100vh;
+    /* Unless page is embedded, because it has no footer, so don't adjust height */
+    html.is-embedded & {
+      min-height: unset;
+    }
   }
-
-  html.is-embedded body {
-    min-height: auto;
-  }
-
+  /* Do not show page footer when form is embedded */
   html.is-embedded footer.s-footer {
     display: none;
   }
