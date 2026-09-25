@@ -83,36 +83,21 @@
     });
 </script>
 <script type="module">
-  function debounce(fn, delay = 50) {
-    let timeoutId;
-    return (...args) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => fn(...args), delay);
-    };
-  }
-
   if (window.parent !== window) {
     const redirectUri = document.querySelector('input[name="client_redirect_uri"]')?.value;
     if (redirectUri) {
       try {
         const parentOrigin = new URL(redirectUri).origin;
 
-        function postIframeHeight(type) {
+        function postIframeHeight() {
           parent.postMessage(
-            { type, height: document.documentElement.scrollHeight },
+            { type: 'IFrameLoaded', height: document.documentElement.scrollHeight },
             parentOrigin
           );
         }
 
-        const postLoaded = debounce(() => postIframeHeight('IFrameLoaded'));
-
-        postIframeHeight('IFrameInit');
-        window.addEventListener('load', postLoaded);
-        window.addEventListener('resize', postLoaded);
-
-        if (document.body) {
-          new ResizeObserver(postLoaded).observe(document.body);
-        }
+        postIframeHeight();
+        window.addEventListener('load', postIframeHeight);
       } catch (e) {
         /* invalid client_redirect_uri */
       }
